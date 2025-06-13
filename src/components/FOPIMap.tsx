@@ -2,17 +2,20 @@ import { Box, Slider, Text } from '@mantine/core';
 import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { DatePicker } from '@mantine/dates';
 import {
+    ImageOverlay,
+    FeatureGroup,
     MapContainer,
     Marker,
+    Popup,
     TileLayer,
-    useMap,
-    ImageOverlay,
-    Popup
+    useMap
 } from 'react-leaflet';
 import { useState, useEffect } from 'react';
 import { fetchFOPI } from '../api/client';
 import dayjs from '../utils/dayjs';
+import 'leaflet-draw';  // Importa solo una volta nel progetto
 import L from 'leaflet';
+
 
 // Icona di default per il marker
 const defaultIcon = L.icon({
@@ -35,6 +38,8 @@ export default function FOPIMap() {
     } | null>(null);
     const [imageUrl, setImageUrl] = useState<string | null>(null);
     const [bounds, setBounds] = useState<[[number, number], [number, number]] | null>(null);
+    const [selectedBounds, setSelectedBounds] = useState<L.LatLngBounds | null>(null);
+
 
     function getBaseMidnightUTC(date: Date | null): string | null {
         if (!date) return null;
@@ -47,8 +52,6 @@ export default function FOPIMap() {
         return midnightUTC.toISOString();
     }
 
-
-
     function CenterMap({ lat, lon }: { lat: number; lon: number }) {
         const map = useMap();
         useEffect(() => {
@@ -57,7 +60,7 @@ export default function FOPIMap() {
         return null;
     }
 
-    // Carica bounds una sola volta
+    // Uplaod bounds just 1 time
     useEffect(() => {
         if (bounds) return;
         fetch('http://127.0.0.1:8090/bounds')
@@ -72,15 +75,121 @@ export default function FOPIMap() {
             .catch((err) => console.error('Error fetching bounds:', err));
     }, [bounds]);
 
-    // Aggiorna immagine + marker
+    function DrawControl({ onRectangleDrawn }: { onRectangleDrawn: (bounds: L.LatLngBounds) => void }) {
+        const map = useMap();
+
+        useEffect(() => {
+            const drawnItems = new L.FeatureGroup();
+            map.addLayer(drawnItems);
+
+            const drawControl = new L.Control.Draw({
+                draw: {
+                    polygon: false,
+                    polyline: false,
+                    circle: false,
+                    marker: false,
+                    circlemarker: false,
+                    rectangle: true
+                },
+                edit: {
+                    featureGroup: drawnItems
+                }
+            });
+
+            map.addControl(drawControl);
+
+            map.on(L.Draw.Event.CREATED, function (event: any) {
+                const layer = event.layer;
+                if (event.layerType === 'rectangle') {
+                    drawnItems.clearLayers(); // solo uno per volta
+                    drawnItems.addLayer(layer);
+                    const bounds = layer.getBounds();
+                    console.log("🔵 Grezzi bounds.getSouthWest():", bounds.getSouthWest());
+                    console.log("🟢 Grezzi bounds.getNorthEast():", bounds.getNorthEast());
+                    map.fitBounds(bounds); // centra sulla selezione
+                    onRectangleDrawn(bounds);
+                }
+            });
+
+
+
+            return () => {
+                map.removeControl(drawControl);
+            };
+        }, [map, onRectangleDrawn]);
+
+        return null;
+    }
+
     useEffect(() => {
+        if (!selectedBounds || !baseDate) return;
+
+        const sw = selectedBounds.getSouthWest();
+        const ne = selectedBounds.getNorthEast();
+
+        console.log("🧭 sw:", sw);
+        console.log("🧭 ne:", ne);
+
+        const lat_min = Math.min(sw.lat, ne.lat);
+        const lat_max = Math.max(sw.lat, ne.lat);
+        const lon_min = Math.min(sw.lng, ne.lng);
+        const lon_max = Math.max(sw.lng, ne.lng);
+
+        if ((lat_max - lat_min) < 0.05 || (lon_max - lon_min) < 0.05) {
+            console.warn("🚫 Bounding box troppo piccolo, seleziona un'area più ampia");
+            return;
+        }
+
+        const bbox = [lat_min, lon_min, lat_max, lon_max];
         const baseISO = getBaseMidnightUTC(baseDate);
         if (!baseISO) return;
 
-        console.log("Base sent to backend:", baseISO);
-        const validTime = dayjs(baseISO).add(leadHours, 'hour').toISOString();
+        const url = `http://127.0.0.1:8090/heatmap/image?base=${baseISO}&lead=${leadHours}&bbox=${bbox.join(',')}`;
 
-        setImageUrl(`http://127.0.0.1:8090/heatmap/image?base=${baseISO}&lead=${leadHours}`);
+        console.log("✅ Heatmap URL:", url);
+        console.log("✅ Normalized bounds:", [[lat_min, lon_min], [lat_max, lon_max]]);
+
+        setImageUrl(url);
+        setBounds([
+            [lat_min, lon_min],
+            [lat_max, lon_max],
+        ]);
+    }, [selectedBounds, baseDate, leadHours]);
+
+
+
+
+    // Update image and marker
+    useEffect(() => {
+        if (!selectedBounds || !baseDate) return;
+
+        const sw = selectedBounds.getSouthWest();
+        const ne = selectedBounds.getNorthEast();
+
+        const lat_min = Math.min(sw.lat, ne.lat);
+        const lat_max = Math.max(sw.lat, ne.lat);
+        const lon_min = Math.min(sw.lng, ne.lng);
+        const lon_max = Math.max(sw.lng, ne.lng);
+
+        // Proteggi da rettangoli troppo piccoli
+        if (Math.abs(lat_max - lat_min) < 0.01 || Math.abs(lon_max - lon_min) < 0.01) {
+            console.warn("🚫 Bounding box troppo piccolo, seleziona un'area più ampia");
+            return;
+        }
+
+        const bbox = [lat_min, lon_min, lat_max, lon_max];
+
+
+        const baseISO = getBaseMidnightUTC(baseDate);
+        if (!baseISO) return;
+
+
+        setImageUrl(`http://127.0.0.1:8090/heatmap/image?base=${baseISO}&lead=${leadHours}&bbox=${bbox.join(',')}`);
+        setBounds([
+            [lat_min, lon_min],
+            [lat_max, lon_max]
+        ]);
+
 
         fetchFOPI(baseISO, leadHours)
             .then((data) => {
@@ -96,7 +205,9 @@ export default function FOPIMap() {
                 console.error('Error fetching FOPI data:', err);
                 setMarkerData(null);
             });
-    }, [baseDate, leadHours]);
+
+    }, [selectedBounds, baseDate, leadHours]);
+
 
     return (
         <Box p="md">
@@ -126,7 +237,7 @@ export default function FOPIMap() {
             />
 
             <Box mt="xl" style={{ height: 500 }}>
-                <MapContainer center={[0, 0]} zoom={2} style={{ height: '100%' }}>
+                <MapContainer center={[28, 6]} zoom={5} style={{ height: '100%' }}>
                     <TileLayer
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         attribution="&copy; OpenStreetMap contributors"
@@ -134,7 +245,7 @@ export default function FOPIMap() {
                     {imageUrl && bounds && (
                         <ImageOverlay url={imageUrl} bounds={bounds} opacity={0.6} />
                     )}
-                    {markerData && (
+                    {/*                     {markerData && (
                         <>
                             <Marker
                                 position={[markerData.lat, markerData.lon]}
@@ -147,9 +258,15 @@ export default function FOPIMap() {
                                     </Text>
                                 </Popup>
                             </Marker>
-                            <CenterMap lat={markerData.lat} lon={markerData.lon} />
+                            {markerData && selectedBounds === null && (
+                                <CenterMap lat={markerData.lat} lon={markerData.lon} />
+                            )}
                         </>
-                    )}
+                    )} */}
+                    <DrawControl onRectangleDrawn={(bounds) => {
+                        console.log('Bounds selezionati:', bounds.toBBoxString());
+                        setSelectedBounds(bounds);
+                    }} />
                 </MapContainer>
             </Box>
         </Box>

@@ -7,6 +7,8 @@ import '@fontsource/lato/700.css'; // bold
 import { MantineProvider } from '@mantine/core';
 import '@mantine/core/styles.css';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet-draw/dist/leaflet.draw.css';
+
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
