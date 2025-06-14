@@ -13,8 +13,10 @@ import {
 import { useState, useEffect } from 'react';
 import { fetchFOPI } from '../api/client';
 import dayjs from '../utils/dayjs';
-import 'leaflet-draw';  // Importa solo una volta nel progetto
+import 'leaflet-draw';
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import 'leaflet-draw/dist/leaflet.draw.css';
 
 
 // Icona di default per il marker
@@ -98,7 +100,7 @@ export default function FOPIMap() {
 
             map.addControl(drawControl);
 
-            map.on(L.Draw.Event.CREATED, function (event: any) {
+            map.on(L.Draw.Event.CREATED, function (event: L.DrawEvents.Created) {
                 const layer = event.layer;
                 if (event.layerType === 'rectangle') {
                     drawnItems.clearLayers(); // solo uno per volta
@@ -110,9 +112,6 @@ export default function FOPIMap() {
                     onRectangleDrawn(bounds);
                 }
             });
-
-
-
             return () => {
                 map.removeControl(drawControl);
             };
@@ -120,43 +119,6 @@ export default function FOPIMap() {
 
         return null;
     }
-
-    useEffect(() => {
-        if (!selectedBounds || !baseDate) return;
-
-        const sw = selectedBounds.getSouthWest();
-        const ne = selectedBounds.getNorthEast();
-
-        console.log("🧭 sw:", sw);
-        console.log("🧭 ne:", ne);
-
-        const lat_min = Math.min(sw.lat, ne.lat);
-        const lat_max = Math.max(sw.lat, ne.lat);
-        const lon_min = Math.min(sw.lng, ne.lng);
-        const lon_max = Math.max(sw.lng, ne.lng);
-
-        if ((lat_max - lat_min) < 0.05 || (lon_max - lon_min) < 0.05) {
-            console.warn("🚫 Bounding box troppo piccolo, seleziona un'area più ampia");
-            return;
-        }
-
-        const bbox = [lat_min, lon_min, lat_max, lon_max];
-        const baseISO = getBaseMidnightUTC(baseDate);
-        if (!baseISO) return;
-
-        const url = `http://127.0.0.1:8090/heatmap/image?base=${baseISO}&lead=${leadHours}&bbox=${bbox.join(',')}`;
-
-        console.log("✅ Heatmap URL:", url);
-        console.log("✅ Normalized bounds:", [[lat_min, lon_min], [lat_max, lon_max]]);
-
-        setImageUrl(url);
-        setBounds([
-            [lat_min, lon_min],
-            [lat_max, lon_max],
-        ]);
-    }, [selectedBounds, baseDate, leadHours]);
-
-
 
 
     // Update image and marker
@@ -210,65 +172,72 @@ export default function FOPIMap() {
 
 
     return (
-        <Box p="md">
-            <DatePicker
-                label="Base time"
-                value={baseDate}
-                onChange={setBaseDate}
-                minDate={new Date(Date.UTC(2024, 11, 1))} // dicembre = 11
-                maxDate={new Date(Date.UTC(2024, 11, 1))}
-                nextIcon={<IconChevronRight size={16} />}
-                previousIcon={<IconChevronLeft size={16} />}
-            />
+        <div style={{ height: '100vh', width: '100vw', position: 'relative' }}>
+            {/* Sidebar fissa a destra */}
+            <div
+                style={{
+                    position: 'absolute',
+                    top: 20,
+                    right: 20,
+                    width: '100%',
+                    maxWidth: 300,
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    padding: '1rem',
+                    borderRadius: '8px',
+                    zIndex: 1000,
+                }}
+            >
+                <DatePicker
+                    label="Base time"
+                    value={baseDate}
+                    onChange={setBaseDate}
+                    minDate={new Date(Date.UTC(2024, 11, 1))}
+                    maxDate={new Date(Date.UTC(2024, 11, 1))}
+                    nextIcon={<IconChevronRight size={16} />}
+                    previousIcon={<IconChevronLeft size={16} />}
+                    style={{ marginBottom: '1rem' }}
+                />
 
-            <Text mt="md">Lead time (hours): {leadHours}</Text>
-            <Slider
-                min={0}
-                max={72}
-                step={3}
-                value={leadHours}
-                onChange={setLeadHours}
-                marks={[
-                    { value: 0, label: '0h' },
-                    { value: 24, label: '24h' },
-                    { value: 48, label: '48h' },
-                    { value: 72, label: '72h' },
-                ]}
-            />
+                <Text style={{ marginTop: '1rem' }}>Lead time (hours): {leadHours}</Text>
+                <Slider
+                    min={0}
+                    max={72}
+                    step={3}
+                    value={leadHours}
+                    onChange={setLeadHours}
+                    marks={[
+                        { value: 0, label: '0h' },
+                        { value: 24, label: '24h' },
+                        { value: 48, label: '48h' },
+                        { value: 72, label: '72h' },
+                    ]}
+                    style={{ marginBottom: '1rem' }}
+                />
+            </div>
 
-            <Box mt="xl" style={{ height: 500 }}>
-                <MapContainer center={[28, 6]} zoom={5} style={{ height: '100%' }}>
-                    <TileLayer
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        attribution="&copy; OpenStreetMap contributors"
-                    />
-                    {imageUrl && bounds && (
-                        <ImageOverlay url={imageUrl} bounds={bounds} opacity={0.6} />
-                    )}
-                    {/*                     {markerData && (
-                        <>
-                            <Marker
-                                position={[markerData.lat, markerData.lon]}
-                                icon={defaultIcon}
-                            >
-                                <Popup>
-                                    <Text size="sm">
-                                        Valid time:<br />
-                                        {markerData.valid_time}
-                                    </Text>
-                                </Popup>
-                            </Marker>
-                            {markerData && selectedBounds === null && (
-                                <CenterMap lat={markerData.lat} lon={markerData.lon} />
-                            )}
-                        </>
-                    )} */}
-                    <DrawControl onRectangleDrawn={(bounds) => {
+            {/* Mappa a tutto schermo */}
+            <MapContainer
+                center={[35, 6]}
+                zoom={3}
+                style={{ height: '100%', width: '100%' }}
+                whenReady={(map) => map.target.invalidateSize()}
+            >
+                <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution="&copy; OpenStreetMap contributors"
+                />
+                {imageUrl && bounds && (
+                    <ImageOverlay url={imageUrl} bounds={bounds} opacity={0.6} />
+                )}
+
+                <DrawControl
+                    onRectangleDrawn={(bounds) => {
                         console.log('Bounds selezionati:', bounds.toBBoxString());
                         setSelectedBounds(bounds);
-                    }} />
-                </MapContainer>
-            </Box>
-        </Box>
+                    }}
+                />
+            </MapContainer>
+        </div>
     );
+
 }
