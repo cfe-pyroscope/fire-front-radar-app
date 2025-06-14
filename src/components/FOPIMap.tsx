@@ -1,22 +1,16 @@
 import { Box, Slider, Text } from '@mantine/core';
 import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { DatePicker } from '@mantine/dates';
-import {
-    ImageOverlay,
-    FeatureGroup,
-    MapContainer,
-    Marker,
-    Popup,
-    TileLayer,
-    useMap
-} from 'react-leaflet';
-import { useState, useEffect } from 'react';
+import { ImageOverlay, FeatureGroup, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
+import { useState, useEffect, useRef } from 'react';
 import { fetchFOPI } from '../api/client';
 import dayjs from '../utils/dayjs';
 import 'leaflet-draw';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
+
+
 
 
 // Icona di default per il marker
@@ -26,6 +20,8 @@ const defaultIcon = L.icon({
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
 });
+
+
 
 export default function FOPIMap() {
     const [baseDate, setBaseDate] = useState<Date | null>(
@@ -41,6 +37,8 @@ export default function FOPIMap() {
     const [imageUrl, setImageUrl] = useState<string | null>(null);
     const [bounds, setBounds] = useState<[[number, number], [number, number]] | null>(null);
     const [selectedBounds, setSelectedBounds] = useState<L.LatLngBounds | null>(null);
+    const mapRef = useRef<L.Map | null>(null);
+    const [mapSize, setMapSize] = useState<{ x: number; y: number } | null>(null);
 
 
     function getBaseMidnightUTC(date: Date | null): string | null {
@@ -54,13 +52,33 @@ export default function FOPIMap() {
         return midnightUTC.toISOString();
     }
 
-    function CenterMap({ lat, lon }: { lat: number; lon: number }) {
-        const map = useMap();
-        useEffect(() => {
-            map.setView([lat, lon], 6);
-        }, [lat, lon, map]);
-        return null;
-    }
+
+    useEffect(() => {
+        if (mapRef.current) {
+            setTimeout(() => {
+                mapRef.current?.invalidateSize();
+            }, 300); // attendi che tutti i layout si assestino
+        }
+    }, [mapSize]);
+
+
+    useEffect(() => {
+        const checkSize = () => {
+            if (mapRef.current) {
+                const size = mapRef.current.getSize();
+                setMapSize({ x: size.x, y: size.y });
+
+                if (size.x > 0 && size.y > 0) {
+                    console.log('✅ Dimensione valida della mappa:', size);
+                } else {
+                    console.warn('❌ Mappa con dimensione 0, ritento...');
+                    setTimeout(checkSize, 200);
+                }
+            }
+        };
+
+        setTimeout(checkSize, 200);
+    }, []);
 
     // Uplaod bounds just 1 time
     useEffect(() => {
@@ -77,12 +95,23 @@ export default function FOPIMap() {
             .catch((err) => console.error('Error fetching bounds:', err));
     }, [bounds]);
 
+    useEffect(() => {
+        window.addEventListener('load', () => {
+            mapRef.current?.invalidateSize();
+        });
+    }, []);
+
     function DrawControl({ onRectangleDrawn }: { onRectangleDrawn: (bounds: L.LatLngBounds) => void }) {
         const map = useMap();
+        const drawnItemsRef = useRef<L.FeatureGroup>();
 
         useEffect(() => {
+            // Evita inizializzazioni multiple
+            if (!map || drawnItemsRef.current) return;
+
             const drawnItems = new L.FeatureGroup();
             map.addLayer(drawnItems);
+            drawnItemsRef.current = drawnItems;
 
             const drawControl = new L.Control.Draw({
                 draw: {
@@ -100,25 +129,42 @@ export default function FOPIMap() {
 
             map.addControl(drawControl);
 
-            map.on(L.Draw.Event.CREATED, function (event: L.DrawEvents.Created) {
+            // Handler singolo
+            const handleDrawCreated = (event: L.DrawEvents.Created) => {
                 const layer = event.layer;
                 if (event.layerType === 'rectangle') {
-                    drawnItems.clearLayers(); // solo uno per volta
-                    drawnItems.addLayer(layer);
                     const bounds = layer.getBounds();
                     console.log("🔵 Grezzi bounds.getSouthWest():", bounds.getSouthWest());
                     console.log("🟢 Grezzi bounds.getNorthEast():", bounds.getNorthEast());
-                    map.fitBounds(bounds); // centra sulla selezione
+
+                    const latDiff = Math.abs(bounds.getNorth() - bounds.getSouth());
+                    const lngDiff = Math.abs(bounds.getEast() - bounds.getWest());
+
+                    if (latDiff < 0.01 || lngDiff < 0.01) {
+                        console.log("Selezione troppo piccola. Riprova.");
+                        return;
+                    }
+
+                    drawnItems.clearLayers();
+                    drawnItems.addLayer(layer);
+                    map.fitBounds(bounds);
                     onRectangleDrawn(bounds);
                 }
-            });
+            };
+
+            map.on(L.Draw.Event.CREATED, handleDrawCreated);
+
             return () => {
+                map.off(L.Draw.Event.CREATED, handleDrawCreated);
                 map.removeControl(drawControl);
+                map.removeLayer(drawnItems);
+                drawnItemsRef.current = undefined;
             };
         }, [map, onRectangleDrawn]);
 
         return null;
     }
+
 
 
     // Update image and marker
@@ -155,12 +201,15 @@ export default function FOPIMap() {
 
         fetchFOPI(baseISO, leadHours)
             .then((data) => {
-                if (data.location) {
+                if (data?.location?.length === 2) {
                     setMarkerData({
                         lat: data.location[0],
                         lon: data.location[1],
                         valid_time: data.valid_time,
                     });
+                } else {
+                    console.warn('❌ Dati non validi ricevuti da fetchFOPI:', data);
+                    setMarkerData(null);
                 }
             })
             .catch((err) => {
@@ -169,6 +218,24 @@ export default function FOPIMap() {
             });
 
     }, [selectedBounds, baseDate, leadHours]);
+
+
+    useEffect(() => {
+        const handleClick = (e: MouseEvent) => {
+            console.log('Mouse click on map:', e.clientX, e.clientY);
+        };
+        document.querySelector('.leaflet-container')?.addEventListener('click', handleClick);
+
+        return () => {
+            document.querySelector('.leaflet-container')?.removeEventListener('click', handleClick);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (mapRef.current) {
+            console.log('📏 useEffect: Mappa size:', mapRef.current.getSize());
+        }
+    }, [mapRef.current]);
 
 
     return (
@@ -185,6 +252,7 @@ export default function FOPIMap() {
                     padding: '1rem',
                     borderRadius: '8px',
                     zIndex: 1000,
+                    pointerEvents: 'auto',
                 }}
             >
                 <DatePicker
@@ -215,12 +283,40 @@ export default function FOPIMap() {
                 />
             </div>
 
-            {/* Mappa a tutto schermo */}
+            {mapSize && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: 10,
+                        left: 10,
+                        zIndex: 2000,
+                        background: '#fff',
+                        padding: '4px 8px',
+                        border: '1px solid #ccc',
+                        borderRadius: 4,
+                    }}
+                >
+                    🗺️ Map size: {mapSize.x} x {mapSize.y}
+                </div>
+            )}
             <MapContainer
                 center={[35, 6]}
                 zoom={3}
-                style={{ height: '100%', width: '100%' }}
-                whenReady={(map) => map.target.invalidateSize()}
+                style={{ height: '100%', width: '100%', zIndex: 0 }}
+                whenCreated={(mapInstance) => {
+                    mapRef.current = mapInstance;
+                    console.log(
+                        '📏 whenCreated: size immediata:',
+                        mapInstance.getSize()
+                    );
+                    setTimeout(() => {
+                        mapInstance.invalidateSize();
+                        console.log(
+                            '📏 after invalidateSize:',
+                            mapInstance.getSize()
+                        );
+                    }, 300);
+                }}
             >
                 <TileLayer
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -229,7 +325,6 @@ export default function FOPIMap() {
                 {imageUrl && bounds && (
                     <ImageOverlay url={imageUrl} bounds={bounds} opacity={0.6} />
                 )}
-
                 <DrawControl
                     onRectangleDrawn={(bounds) => {
                         console.log('Bounds selezionati:', bounds.toBBoxString());

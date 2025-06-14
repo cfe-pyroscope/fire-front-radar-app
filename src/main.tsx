@@ -9,6 +9,19 @@ import '@mantine/core/styles.css';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 
+if (process.env.NODE_ENV === 'development') {
+  const originalConsoleError = console.error;
+  console.error = (...args) => {
+    const msg = args[0];
+    if (
+      typeof msg === 'string' &&
+      msg.includes('Unexpected return value from a callback ref')
+    ) {
+      return;
+    }
+    originalConsoleError(...args);
+  };
+}
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
