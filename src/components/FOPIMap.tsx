@@ -390,20 +390,20 @@ export default function FOPIMap() {
                             NE: {selectedBounds.getNorthEast().lat.toFixed(6)}, {selectedBounds.getNorthEast().lng.toFixed(6)}
                         </Text>
                         <Text size="xs">
-                            Larghezza: {Math.abs(selectedBounds.getEast() - selectedBounds.getWest()).toFixed(6)}°
+                            Width: {Math.abs(selectedBounds.getEast() - selectedBounds.getWest()).toFixed(6)}°
                         </Text>
                         <Text size="xs">
-                            Altezza: {Math.abs(selectedBounds.getNorth() - selectedBounds.getSouth()).toFixed(6)}°
+                            Height: {Math.abs(selectedBounds.getNorth() - selectedBounds.getSouth()).toFixed(6)}°
                         </Text>
                         <Text size="xs">
-                            Centro: {selectedBounds.getCenter().lat.toFixed(4)}, {selectedBounds.getCenter().lng.toFixed(4)}
+                            Center: {selectedBounds.getCenter().lat.toFixed(4)}, {selectedBounds.getCenter().lng.toFixed(4)}
                         </Text>
 
                         {/* Indicatore se l'area sembra corretta */}
                         {(Math.abs(selectedBounds.getEast() - selectedBounds.getWest()) >= 1.0 &&
                             Math.abs(selectedBounds.getNorth() - selectedBounds.getSouth()) >= 1.0) && (
                                 <Text size="xs" color="green" weight="bold">
-                                    ✅ Area sembra corretta
+                                    ✅ Area selected correctly
                                 </Text>
                             )}
 
