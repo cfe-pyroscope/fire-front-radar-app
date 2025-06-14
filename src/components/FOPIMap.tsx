@@ -10,9 +10,6 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
 
-
-
-
 // Icona di default per il marker
 const defaultIcon = L.icon({
     iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -20,8 +17,6 @@ const defaultIcon = L.icon({
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
 });
-
-
 
 export default function FOPIMap() {
     const [baseDate, setBaseDate] = useState<Date | null>(
@@ -39,7 +34,7 @@ export default function FOPIMap() {
     const [selectedBounds, setSelectedBounds] = useState<L.LatLngBounds | null>(null);
     const mapRef = useRef<L.Map | null>(null);
     const [mapSize, setMapSize] = useState<{ x: number; y: number } | null>(null);
-
+    const drawnItemsRef = useRef<L.FeatureGroup | null>(null);
 
     function getBaseMidnightUTC(date: Date | null): string | null {
         if (!date) return null;
@@ -52,15 +47,15 @@ export default function FOPIMap() {
         return midnightUTC.toISOString();
     }
 
-
     useEffect(() => {
-        if (mapRef.current) {
-            setTimeout(() => {
-                mapRef.current?.invalidateSize();
-            }, 300); // attendi che tutti i layout si assestino
-        }
-    }, [mapSize]);
-
+        const interval = setInterval(() => {
+            if (mapRef.current && mapRef.current.getSize().x > 0) {
+                mapRef.current.invalidateSize();
+                clearInterval(interval);
+            }
+        }, 100);
+        return () => clearInterval(interval);
+    }, []);
 
     useEffect(() => {
         const checkSize = () => {
@@ -80,7 +75,7 @@ export default function FOPIMap() {
         setTimeout(checkSize, 200);
     }, []);
 
-    // Uplaod bounds just 1 time
+    // Upload bounds just 1 time
     useEffect(() => {
         if (bounds) return;
         fetch('http://127.0.0.1:8090/bounds')
@@ -95,24 +90,22 @@ export default function FOPIMap() {
             .catch((err) => console.error('Error fetching bounds:', err));
     }, [bounds]);
 
-    useEffect(() => {
-        window.addEventListener('load', () => {
-            mapRef.current?.invalidateSize();
-        });
-    }, []);
-
     function DrawControl({ onRectangleDrawn }: { onRectangleDrawn: (bounds: L.LatLngBounds) => void }) {
         const map = useMap();
-        const drawnItemsRef = useRef<L.FeatureGroup>();
 
         useEffect(() => {
-            // Evita inizializzazioni multiple
-            if (!map || drawnItemsRef.current) return;
+            // Force map to be ready
+            if (!map || map.getSize().x === 0) {
+                console.warn('🔄 Map not ready, retrying...');
+                return;
+            }
 
+            // Crea il FeatureGroup per gestire i layer disegnati
             const drawnItems = new L.FeatureGroup();
-            map.addLayer(drawnItems);
             drawnItemsRef.current = drawnItems;
+            map.addLayer(drawnItems);
 
+            // Configura il controllo di disegno con opzioni più stabili
             const drawControl = new L.Control.Draw({
                 draw: {
                     polygon: false,
@@ -120,52 +113,154 @@ export default function FOPIMap() {
                     circle: false,
                     marker: false,
                     circlemarker: false,
-                    rectangle: true
+                    rectangle: {
+                        shapeOptions: {
+                            color: '#ff0000',
+                            weight: 3,
+                            fillOpacity: 0.2,
+                            fillColor: '#ff0000'
+                        },
+                        showArea: false, // Disabilita il calcolo dell'area per evitare l'errore
+                        metric: false,   // Disabilita le metriche
+                        repeatMode: false
+                    }
                 },
                 edit: {
-                    featureGroup: drawnItems
+                    featureGroup: drawnItems,
+                    remove: true
                 }
             });
 
             map.addControl(drawControl);
 
-            // Handler singolo
-            const handleDrawCreated = (event: L.DrawEvents.Created) => {
-                const layer = event.layer;
-                if (event.layerType === 'rectangle') {
-                    const bounds = layer.getBounds();
-                    console.log("🔵 Grezzi bounds.getSouthWest():", bounds.getSouthWest());
-                    console.log("🟢 Grezzi bounds.getNorthEast():", bounds.getNorthEast());
+            // Variabile per tracciare l'ultimo layer creato
+            let lastCreatedLayer: L.Rectangle | null = null;
 
-                    const latDiff = Math.abs(bounds.getNorth() - bounds.getSouth());
-                    const lngDiff = Math.abs(bounds.getEast() - bounds.getWest());
+            // Gestisci l'evento di creazione - approccio principale
+            const onDrawCreated = (event: L.DrawEvents.Created) => {
+                console.log('🔧 Draw created event:', event);
 
-                    if (latDiff < 0.01 || lngDiff < 0.01) {
-                        console.log("Selezione troppo piccola. Riprova.");
-                        return;
+                try {
+                    const layer = event.layer as L.Rectangle;
+
+                    if (event.layerType === 'rectangle') {
+                        // Rimuovi layer precedenti
+                        drawnItems.clearLayers();
+
+                        // Aggiungi il nuovo layer
+                        drawnItems.addLayer(layer);
+                        lastCreatedLayer = layer;
+
+                        // Ottieni i bounds immediatamente
+                        const bounds = layer.getBounds();
+
+                        console.log("🎯 Rectangle creato - SW:", bounds.getSouthWest());
+                        console.log("🎯 Rectangle creato - NE:", bounds.getNorthEast());
+
+                        const width = Math.abs(bounds.getEast() - bounds.getWest());
+                        const height = Math.abs(bounds.getNorth() - bounds.getSouth());
+
+                        console.log("📏 Dimensioni area creata:", { width, height });
+
+                        // Verifica che l'area sia ragionevole
+                        if (width < 0.001 || height < 0.001) {
+                            console.warn("🚫 Area troppo piccola. Layer rimosso.");
+                            drawnItems.removeLayer(layer);
+                            return;
+                        }
+
+                        // Chiama il callback
+                        onRectangleDrawn(bounds);
                     }
-
-                    drawnItems.clearLayers();
-                    drawnItems.addLayer(layer);
-                    map.fitBounds(bounds);
-                    onRectangleDrawn(bounds);
+                } catch (error) {
+                    console.error("❌ Errore nella gestione del draw created:", error);
                 }
             };
 
-            map.on(L.Draw.Event.CREATED, handleDrawCreated);
+            // Backup con timeout per catturare eventuali bounds mancanti
+            const onDrawStop = (event: any) => {
+                console.log('🛑 Drawing stopped:', event);
 
+                // Timeout di sicurezza per catturare il layer se non è stato gestito da onDrawCreated
+                setTimeout(() => {
+                    if (!lastCreatedLayer) {
+                        console.log("🔍 Ricerca layer creato manualmente...");
+                        drawnItems.eachLayer((layer: any) => {
+                            if (layer instanceof L.Rectangle && layer !== lastCreatedLayer) {
+                                console.log("🎯 Layer trovato manualmente:", layer);
+                                const bounds = layer.getBounds();
+                                console.log("🎯 Bounds dal layer manuale:", bounds);
+                                lastCreatedLayer = layer;
+                                onRectangleDrawn(bounds);
+                            }
+                        });
+                    }
+                }, 100);
+            };
+
+            // Gestisci l'editing
+            const onDrawEdited = (event: L.DrawEvents.Edited) => {
+                console.log('✏️ Rectangle edited:', event);
+                const layers = event.layers;
+                layers.eachLayer((layer) => {
+                    if (layer instanceof L.Rectangle) {
+                        const bounds = layer.getBounds();
+                        console.log("✏️ Edited bounds:", bounds);
+                        onRectangleDrawn(bounds);
+                    }
+                });
+            };
+
+            // Gestisci la cancellazione
+            const onDrawDeleted = (event: L.DrawEvents.Deleted) => {
+                console.log('🗑️ Rectangle deleted:', event);
+                lastCreatedLayer = null;
+                setSelectedBounds(null);
+                setImageUrl(null);
+            };
+
+            // Reset quando si inizia un nuovo drawing
+            const onDrawStart = (event: any) => {
+                console.log('🖊️ Drawing started:', event);
+                lastCreatedLayer = null;
+            };
+
+            // Aggiungi i listener con gestione degli errori
+            try {
+                map.on(L.Draw.Event.CREATED, onDrawCreated);
+                map.on(L.Draw.Event.DRAWSTART, onDrawStart);
+                map.on(L.Draw.Event.DRAWSTOP, onDrawStop);
+                map.on(L.Draw.Event.EDITED, onDrawEdited);
+                map.on(L.Draw.Event.DELETED, onDrawDeleted);
+            } catch (error) {
+                console.error("❌ Errore nell'aggiunta dei listener:", error);
+            }
+
+            // Forza l'invalidazione della size della mappa
+            setTimeout(() => {
+                map.invalidateSize();
+                console.log('🔄 Map size invalidated after DrawControl setup');
+            }, 200);
+
+            // Cleanup
             return () => {
-                map.off(L.Draw.Event.CREATED, handleDrawCreated);
-                map.removeControl(drawControl);
-                map.removeLayer(drawnItems);
-                drawnItemsRef.current = undefined;
+                try {
+                    map.off(L.Draw.Event.CREATED, onDrawCreated);
+                    map.off(L.Draw.Event.DRAWSTART, onDrawStart);
+                    map.off(L.Draw.Event.DRAWSTOP, onDrawStop);
+                    map.off(L.Draw.Event.EDITED, onDrawEdited);
+                    map.off(L.Draw.Event.DELETED, onDrawDeleted);
+                    map.removeControl(drawControl);
+                    map.removeLayer(drawnItems);
+                    drawnItemsRef.current = null;
+                } catch (error) {
+                    console.error("❌ Errore nel cleanup:", error);
+                }
             };
         }, [map, onRectangleDrawn]);
 
         return null;
     }
-
-
 
     // Update image and marker
     useEffect(() => {
@@ -174,31 +269,40 @@ export default function FOPIMap() {
         const sw = selectedBounds.getSouthWest();
         const ne = selectedBounds.getNorthEast();
 
+        // Assicurati che i valori siano corretti
         const lat_min = Math.min(sw.lat, ne.lat);
         const lat_max = Math.max(sw.lat, ne.lat);
         const lon_min = Math.min(sw.lng, ne.lng);
         const lon_max = Math.max(sw.lng, ne.lng);
 
-        // Proteggi da rettangoli troppo piccoli
+        console.log("🎯 Bounds finali per API:", {
+            lat_min, lat_max, lon_min, lon_max,
+            width: lon_max - lon_min,
+            height: lat_max - lat_min
+        });
+
+        // Verifica che l'area sia valida
         if (Math.abs(lat_max - lat_min) < 0.01 || Math.abs(lon_max - lon_min) < 0.01) {
             console.warn("🚫 Bounding box troppo piccolo, seleziona un'area più ampia");
             return;
         }
 
         const bbox = [lat_min, lon_min, lat_max, lon_max];
-
-
         const baseISO = getBaseMidnightUTC(baseDate);
         if (!baseISO) return;
 
+        // Aggiorna l'URL dell'immagine
+        const newImageUrl = `http://127.0.0.1:8090/heatmap/image?base=${baseISO}&lead=${leadHours}&bbox=${bbox.join(',')}`;
+        console.log("🖼️ URL immagine generato:", newImageUrl);
+        setImageUrl(newImageUrl);
 
-        setImageUrl(`http://127.0.0.1:8090/heatmap/image?base=${baseISO}&lead=${leadHours}&bbox=${bbox.join(',')}`);
+        // Aggiorna i bounds per l'ImageOverlay
         setBounds([
             [lat_min, lon_min],
             [lat_max, lon_max]
         ]);
 
-
+        // Fetch dei dati FOPI
         fetchFOPI(baseISO, leadHours)
             .then((data) => {
                 if (data?.location?.length === 2) {
@@ -219,24 +323,11 @@ export default function FOPIMap() {
 
     }, [selectedBounds, baseDate, leadHours]);
 
-
-    useEffect(() => {
-        const handleClick = (e: MouseEvent) => {
-            console.log('Mouse click on map:', e.clientX, e.clientY);
-        };
-        document.querySelector('.leaflet-container')?.addEventListener('click', handleClick);
-
-        return () => {
-            document.querySelector('.leaflet-container')?.removeEventListener('click', handleClick);
-        };
-    }, []);
-
     useEffect(() => {
         if (mapRef.current) {
             console.log('📏 useEffect: Mappa size:', mapRef.current.getSize());
         }
     }, [mapRef.current]);
-
 
     return (
         <div style={{ height: '100vh', width: '100vw', position: 'relative' }}>
@@ -281,6 +372,75 @@ export default function FOPIMap() {
                     ]}
                     style={{ marginBottom: '1rem' }}
                 />
+
+                {/* Informazioni debug sull'area selezionata */}
+                {selectedBounds && (
+                    <div style={{
+                        marginTop: '2rem',
+                        padding: '0.5rem',
+                        backgroundColor: 'rgba(0, 255, 0, 0.1)',
+                        borderRadius: '4px',
+                        fontSize: '12px'
+                    }}>
+                        <Text size="xs" weight="bold">Selected area:</Text>
+                        <Text size="xs">
+                            SW: {selectedBounds.getSouthWest().lat.toFixed(6)}, {selectedBounds.getSouthWest().lng.toFixed(6)}
+                        </Text>
+                        <Text size="xs">
+                            NE: {selectedBounds.getNorthEast().lat.toFixed(6)}, {selectedBounds.getNorthEast().lng.toFixed(6)}
+                        </Text>
+                        <Text size="xs">
+                            Larghezza: {Math.abs(selectedBounds.getEast() - selectedBounds.getWest()).toFixed(6)}°
+                        </Text>
+                        <Text size="xs">
+                            Altezza: {Math.abs(selectedBounds.getNorth() - selectedBounds.getSouth()).toFixed(6)}°
+                        </Text>
+                        <Text size="xs">
+                            Centro: {selectedBounds.getCenter().lat.toFixed(4)}, {selectedBounds.getCenter().lng.toFixed(4)}
+                        </Text>
+
+                        {/* Indicatore se l'area sembra corretta */}
+                        {(Math.abs(selectedBounds.getEast() - selectedBounds.getWest()) >= 1.0 &&
+                            Math.abs(selectedBounds.getNorth() - selectedBounds.getSouth()) >= 1.0) && (
+                                <Text size="xs" color="green" weight="bold">
+                                    ✅ Area sembra corretta
+                                </Text>
+                            )}
+
+                        {(Math.abs(selectedBounds.getEast() - selectedBounds.getWest()) < 1.0 ||
+                            Math.abs(selectedBounds.getNorth() - selectedBounds.getSouth()) < 1.0) && (
+                                <Text size="xs" color="orange" weight="bold">
+                                    ⚠️ Area potentially small
+                                </Text>
+                            )}
+                    </div>
+                )}
+
+                {/* Pulsante per reset/debug */}
+                <div style={{ marginTop: '1rem' }}>
+                    <button
+                        onClick={() => {
+                            setSelectedBounds(null);
+                            setImageUrl(null);
+                            if (drawnItemsRef.current) {
+                                drawnItemsRef.current.clearLayers();
+                            }
+                            console.log('🧹 Reset completato');
+                        }}
+                        style={{
+                            padding: '0.5rem 1rem',
+                            backgroundColor: '#ff6b6b',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            marginTop: '1rem'
+                        }}
+                    >
+                        Reset Selection
+                    </button>
+                </div>
             </div>
 
             {mapSize && (
@@ -296,43 +456,69 @@ export default function FOPIMap() {
                         borderRadius: 4,
                     }}
                 >
-                    🗺️ Map size: {mapSize.x} x {mapSize.y}
+                    🗺️ Map size: {mapSize.x} × {mapSize.y}
                 </div>
             )}
+
             <MapContainer
-                center={[35, 6]}
-                zoom={3}
+                center={[28, 2]} // Centrato su Nord Africa per i tuoi test  
+                zoom={4} // Zoom più alto per vedere meglio l'area
                 style={{ height: '100%', width: '100%', zIndex: 0 }}
                 whenCreated={(mapInstance) => {
                     mapRef.current = mapInstance;
-                    console.log(
-                        '📏 whenCreated: size immediata:',
-                        mapInstance.getSize()
-                    );
-                    setTimeout(() => {
+                    console.log('📏 whenCreated: size immediata:', mapInstance.getSize());
+
+                    // Forza multiple invalidazioni per assicurarsi che la mappa sia pronta
+                    const forceReady = () => {
                         mapInstance.invalidateSize();
-                        console.log(
-                            '📏 after invalidateSize:',
-                            mapInstance.getSize()
-                        );
-                    }, 300);
+                        console.log('📏 after invalidateSize:', mapInstance.getSize());
+
+                        // Assicurati che la proiezione sia corretta
+                        const bounds = mapInstance.getBounds();
+                        console.log('🌍 Initial map bounds:', bounds.toBBoxString());
+                    };
+
+                    setTimeout(forceReady, 100);
+                    setTimeout(forceReady, 300);
+                    setTimeout(forceReady, 500);
+                }}
+                // Aggiungi eventi per monitorare zoom e pan
+                whenReady={() => {
+                    console.log('🎯 Map is ready!');
                 }}
             >
                 <TileLayer
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     attribution="&copy; OpenStreetMap contributors"
                 />
+
                 {imageUrl && bounds && (
                     <ImageOverlay url={imageUrl} bounds={bounds} opacity={0.6} />
                 )}
+
+                {markerData && (
+                    <Marker
+                        position={[markerData.lat, markerData.lon]}
+                        icon={defaultIcon}
+                    >
+                        <Popup>
+                            <div>
+                                <strong>FOPI Data</strong><br />
+                                Lat: {markerData.lat}<br />
+                                Lon: {markerData.lon}<br />
+                                Valid Time: {markerData.valid_time}
+                            </div>
+                        </Popup>
+                    </Marker>
+                )}
+
                 <DrawControl
                     onRectangleDrawn={(bounds) => {
-                        console.log('Bounds selezionati:', bounds.toBBoxString());
+                        console.log('🎯 Bounds selezionati per callback:', bounds.toBBoxString());
                         setSelectedBounds(bounds);
                     }}
                 />
             </MapContainer>
         </div>
     );
-
 }
