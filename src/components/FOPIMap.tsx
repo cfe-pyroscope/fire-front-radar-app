@@ -330,7 +330,7 @@ export default function FOPIMap() {
     }, [mapRef.current]);
 
     return (
-        <div style={{ height: '100vh', width: '100vw', position: 'relative' }}>
+        <div style={{ height: '93vh', width: '100vw', position: 'relative' }}>
             {/* Sidebar fissa a destra */}
             <div
                 style={{

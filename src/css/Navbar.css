@@ -1,0 +1,14 @@
+.nav-link {
+  color: white;
+}
+
+.nav-link:focus,
+.nav-link:hover,
+.navActive {
+  color: var(--color-logo-darker-blue) !important;
+  
+}
+
+.navbar  {
+    background-color: var(--color-random3) !important
+}
