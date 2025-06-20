@@ -5,7 +5,7 @@ const App: React.FC = () => {
   return (
     <div>
       <nav>
-        <Link to="/">Home</Link> | <Link to="/info">Info</Link> | <Link to="/fopi">Map Fopi test</Link>
+        <Link to="/">Home</Link> | <Link to="/info">Info</Link> | <Link to="/fopi-test">Map Fopi test</Link>
       </nav>
       <hr />
       <Outlet />
@@ -14,3 +14,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+
