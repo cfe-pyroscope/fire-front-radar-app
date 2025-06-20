@@ -3,7 +3,7 @@ import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { DatePicker } from '@mantine/dates';
 import { ImageOverlay, FeatureGroup, MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import { useState, useEffect, useRef } from 'react';
-import { fetchFOPI } from '../api/client';
+import { fetchFOPITEST } from '../api/client';
 import dayjs from '../utils/dayjs';
 import 'leaflet-draw';
 import L from 'leaflet';
@@ -64,9 +64,9 @@ export default function FOPIMap() {
                 setMapSize({ x: size.x, y: size.y });
 
                 if (size.x > 0 && size.y > 0) {
-                    console.log('✅ Dimensione valida della mappa:', size);
+                    console.log("✅ Valid map's dimensions:", size);
                 } else {
-                    console.warn('❌ Mappa con dimensione 0, ritento...');
+                    console.warn("❌ Mappa widimensions 0, I try again...");
                     setTimeout(checkSize, 200);
                 }
             }
@@ -154,17 +154,17 @@ export default function FOPIMap() {
                         // Ottieni i bounds immediatamente
                         const bounds = layer.getBounds();
 
-                        console.log("🎯 Rectangle creato - SW:", bounds.getSouthWest());
-                        console.log("🎯 Rectangle creato - NE:", bounds.getNorthEast());
+                        console.log("🎯 Rectangle created - SW:", bounds.getSouthWest());
+                        console.log("🎯 Rectangle created - NE:", bounds.getNorthEast());
 
                         const width = Math.abs(bounds.getEast() - bounds.getWest());
                         const height = Math.abs(bounds.getNorth() - bounds.getSouth());
 
-                        console.log("📏 Dimensioni area creata:", { width, height });
+                        console.log("📏 New area dimensions:", { width, height });
 
                         // Verifica che l'area sia ragionevole
                         if (width < 0.001 || height < 0.001) {
-                            console.warn("🚫 Area troppo piccola. Layer rimosso.");
+                            console.warn("🚫 Too small area. Layer removed.");
                             drawnItems.removeLayer(layer);
                             return;
                         }
@@ -173,7 +173,7 @@ export default function FOPIMap() {
                         onRectangleDrawn(bounds);
                     }
                 } catch (error) {
-                    console.error("❌ Errore nella gestione del draw created:", error);
+                    console.error("❌ Error handling 'draw created':", error);
                 }
             };
 
@@ -184,12 +184,12 @@ export default function FOPIMap() {
                 // Timeout di sicurezza per catturare il layer se non è stato gestito da onDrawCreated
                 setTimeout(() => {
                     if (!lastCreatedLayer) {
-                        console.log("🔍 Ricerca layer creato manualmente...");
+                        console.log("🔍 Search layer manually...");
                         drawnItems.eachLayer((layer: any) => {
                             if (layer instanceof L.Rectangle && layer !== lastCreatedLayer) {
-                                console.log("🎯 Layer trovato manualmente:", layer);
+                                console.log("🎯 Layer found manually:", layer);
                                 const bounds = layer.getBounds();
-                                console.log("🎯 Bounds dal layer manuale:", bounds);
+                                console.log("🎯 Manual layer's ounds:", bounds);
                                 lastCreatedLayer = layer;
                                 onRectangleDrawn(bounds);
                             }
