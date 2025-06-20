@@ -5,6 +5,7 @@ const Home: React.FC = () => {
         <div className="p-4">
             <h1>Homepage</h1>
             <p>Welcome to the dashboard</p>
+            <p>Hello</p>
         </div>
     )
 }
