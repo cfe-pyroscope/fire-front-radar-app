@@ -8,6 +8,7 @@ import IndexToggle from '../components/IndexToggle';
 
 
 const Home: React.FC = () => {
+
     const [indexName, setIndexName] = useState<'pof' | 'fopi'>('pof');
     const base = "2024-12-01T00:00:00Z";
     const lead = 0;

@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import Router from './routes/Router';
+import '../src/index.css'
 
 import '@fontsource/lato/400.css'; // normale
 import '@fontsource/lato/700.css'; // bold
