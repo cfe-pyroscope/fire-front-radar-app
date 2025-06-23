@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { CRS, Point, LatLngBoundsExpression } from "leaflet";
+import { CRS, Point, type LatLngBoundsExpression } from "leaflet";
 import { useMap, ImageOverlay } from "react-leaflet";
 import { API_BASE_URL } from "../api/config";
 
@@ -31,7 +31,8 @@ const HeatmapOverlay: React.FC<HeatmapOverlayProps> = ({ indexName, base, lead }
 
             const url =
                 `${API_BASE_URL}/api/${indexName}/heatmap/image` +
-                `?base=${base}&lead=${lead}&bbox=${bbox}`;
+                `?base_time=${base}&lead_hours=${lead}&bbox=${bbox}`;
+
 
             /* ---------- 2) fetch PNG ---------- */
             const res = await fetch(url, { signal: ctrl.signal });

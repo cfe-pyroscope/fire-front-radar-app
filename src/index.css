@@ -29,6 +29,7 @@ body,
   margin: 0;
   padding: 0;
   overflow: hidden;
+  position: relative;
 }
 
 body {
@@ -42,6 +43,5 @@ h1 {
 }
 
 @media (prefers-color-scheme: light) {
-  :root {
-  }
+  :root {}
 }

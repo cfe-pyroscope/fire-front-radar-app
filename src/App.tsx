@@ -1,12 +1,9 @@
 import React from 'react';
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 
 const App: React.FC = () => {
   return (
     <div>
-      {/* <nav>
-        <Link to="/">Home</Link>
-      </nav> */}
       <Outlet />
     </div>
   );
