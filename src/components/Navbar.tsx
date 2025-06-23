@@ -10,7 +10,7 @@ const pages = [
 
 export default function Navbar() {
   return (
-    <nav className="navbar navbar-dark" style={{ height: '7vh'}}>
+    <nav className="navbar navbar-dark" style={{ height: '7vh' }}>
       <div className="container-fluid d-flex align-items-center">
         <a
           className="navbar-brand d-flex align-items-center"
