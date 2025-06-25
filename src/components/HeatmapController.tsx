@@ -51,7 +51,8 @@ const HeatmapController: React.FC<HeatmapControllerProps> = ({ indexName }) => {
 
                 setForecastSteps(data.forecast_steps);
                 setSelectedLeadHours(data.forecast_steps[0].lead_hours);
-                setBaseTime(baseIso);
+                const fileBase = new Date(new Date(data.forecast_steps[0].time).getTime() - data.forecast_steps[0].lead_hours * 3600_000);
+                setBaseTime(fileBase.toISOString());
                 setError(null);
             } catch (err: any) {
                 console.error("Failed to load metadata:", err);
