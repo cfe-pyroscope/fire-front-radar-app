@@ -4,14 +4,30 @@ import { CRS } from "leaflet";
 import 'leaflet/dist/leaflet.css';
 import '../css/Home.css';
 import IndexToggle from '../components/IndexToggle';
-import HeatmapController from '../components/HeatmapController';  // ✅ NEW
+import DatePickerComponent from '../components/DatePickerComponent';
+import HeatmapController from '../components/HeatmapController';
 
 const Home: React.FC = () => {
     const [indexName, setIndexName] = useState<'pof' | 'fopi'>('pof');
+    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+
+    console.log('Home component render - selectedDate:', selectedDate, 'isValid:', selectedDate instanceof Date && !isNaN(selectedDate.getTime()));
 
     return (
         <div className="map-container">
             <IndexToggle currentIndex={indexName} onToggle={setIndexName} />
+            <DatePickerComponent
+                value={selectedDate}
+                onChange={(date) => {
+                    const isValid = date instanceof Date && !isNaN(date.getTime());
+                    console.log('DatePicker onChange - received:', date, 'isValid:', isValid);
+
+                    if (isValid) {
+                        setSelectedDate(date);
+                        console.log('Successfully set new date:', date);
+                    }
+                }}
+            />
 
             <MapContainer
                 center={[28, 2]}
@@ -29,7 +45,10 @@ const Home: React.FC = () => {
                     url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
                     noWrap={true}
                 />
-                <HeatmapController indexName={indexName} />
+
+                {selectedDate && (
+                    <HeatmapController indexName={indexName} selectedDate={selectedDate} />
+                )}
             </MapContainer>
         </div>
     );

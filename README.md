@@ -1,5 +1,30 @@
 # React + TypeScript + Vite
 
+## 📁 Frontend structure
+
+src/  
+├── api/  
+│   ├── client.ts               # HTTP client setup (e.g. fetch wrapper or axios instance)  
+│   └── config.ts               # Base API URL and environment config  
+│  
+├── components/  
+│   ├── DatePickerComponent.tsx # Mantine DatePickerInput; allows user to pick a date, updates app state  
+│   ├── HeatmapController.tsx   # Fetches metadata & forecast steps; passes props to HeatmapOverlay  
+│   ├── HeatmapOverlay.tsx      # Renders Leaflet ImageOverlay for fire data from NetCDF backend  
+│   └── IndexToggle.tsx         # Mantine Switch to toggle between "fopi" and "pof" indexes  
+│  
+├── pages/  
+│   └── Home.tsx                # Main map dashboard; combines map, toggle, date picker, and controller  
+│  
+├── routes/  
+│   └── Router.tsx              # React Router setup; maps routes to components/pages  
+│  
+├── App.tsx                     # Root component, wraps app layout; could be minimal if Router is main handler  
+├── main.tsx                    # Entry point; ReactDOM render, wraps app with MantineProvider and Router  
+
+
+
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
