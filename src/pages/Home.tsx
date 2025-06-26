@@ -6,6 +6,7 @@ import '../css/Home.css';
 import HeatmapController from '../components/HeatmapController';
 import IndexToggle from '../components/IndexToggle';
 import DatePickerComponent from '../components/DatePickerComponent';
+import MapLabels from '../components/MapLabels';
 
 
 const Home: React.FC = () => {
@@ -41,15 +42,25 @@ const Home: React.FC = () => {
                 worldCopyJump={false}
                 style={{ height: '100%', width: '100%', zIndex: 0 }}
             >
+
+                <MapLabels />
+
                 <TileLayer
-                    attribution='&copy; OpenStreetMap contributors &copy; CARTO'
-                    url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                    url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png"
                     noWrap={true}
                 />
 
                 {selectedDate && (
                     <HeatmapController indexName={indexName} selectedDate={selectedDate} />
                 )}
+
+                <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                    url="https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png"
+                    noWrap={true}
+                    pane="labels"
+                />
             </MapContainer>
         </div>
     );
