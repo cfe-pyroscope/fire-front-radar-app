@@ -110,7 +110,7 @@ const HeatmapOverlay: React.FC<HeatmapOverlayProps> = ({ indexName, base, lead }
         <ImageOverlay
             url={imageUrl}
             bounds={bounds}
-            opacity={0.55}
+            opacity={1}
         />
     );
 };
