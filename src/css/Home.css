@@ -9,3 +9,13 @@
     width: 100%;
     position: relative;
 }
+
+.leaflet-div-icon.leaflet-editing-icon {
+    width: 8px !important;
+    height: 8px !important;
+    margin-left: -4px !important;
+    margin-top: -4px !important;
+    border-radius: 2px;
+    border: 1px solid #333;
+    background-color: #fff;
+}
