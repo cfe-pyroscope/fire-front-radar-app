@@ -1,5 +1,5 @@
 import React from "react";
-import { Switch } from "@mantine/core";
+import { SegmentedControl } from "@mantine/core";
 import "../css/IndexToggle.css";
 
 interface IndexToggleProps {
@@ -8,21 +8,17 @@ interface IndexToggleProps {
 }
 
 const IndexToggle: React.FC<IndexToggleProps> = ({ currentIndex, onToggle }) => {
-    const isFopi = currentIndex === "fopi";
-
-    const handleChange = () => {
-        const newIndex = isFopi ? "pof" : "fopi";
-        onToggle(newIndex);
-    };
-
     return (
         <div className="index-toggle-container">
-            <Switch
-                checked={isFopi}
-                onChange={handleChange}
-                size="md"
-                color="orange"
-                label={isFopi ? "FOPI" : "POF"}
+            <SegmentedControl
+                value={currentIndex}
+                onChange={(value: "fopi" | "pof") => onToggle(value)}
+                data={[
+                    { label: "POF", value: "pof" },
+                    { label: "FOPI", value: "fopi" },
+                ]}
+                transitionDuration={500}
+                transitionTimingFunction="linear"
             />
         </div>
     );

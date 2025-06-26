@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import ForecastSelect from "./ForecastSelect";
 import HeatmapOverlay from "./HeatmapOverlay";
 import "../css/HeatmapController.css";
 import { API_BASE_URL } from "../api/config";
@@ -119,22 +120,11 @@ const HeatmapController: React.FC<HeatmapControllerProps> = ({ indexName, select
     return (
         <>
             {forecastSteps.length > 0 && (
-                <div className="forecast-dropdown">
-                    <label>
-                        Forecast time:&nbsp;
-                        <br />
-                        <select
-                            value={selectedLeadHours ?? ""}
-                            onChange={(e) => setSelectedLeadHours(parseInt(e.target.value))}
-                        >
-                            {forecastSteps.map((step) => (
-                                <option key={step.lead_hours} value={step.lead_hours}>
-                                    {step.time}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                </div>
+                <ForecastSelect
+                    forecastSteps={forecastSteps}
+                    selectedLeadHours={selectedLeadHours}
+                    onChange={setSelectedLeadHours}
+                />
             )}
 
             {baseTime !== null && selectedLeadHours !== null && (
