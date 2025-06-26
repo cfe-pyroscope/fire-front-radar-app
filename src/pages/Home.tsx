@@ -3,9 +3,10 @@ import { MapContainer, TileLayer } from 'react-leaflet';
 import { CRS } from "leaflet";
 import 'leaflet/dist/leaflet.css';
 import '../css/Home.css';
+import HeatmapController from '../components/HeatmapController';
 import IndexToggle from '../components/IndexToggle';
 import DatePickerComponent from '../components/DatePickerComponent';
-import HeatmapController from '../components/HeatmapController';
+
 
 const Home: React.FC = () => {
     const [indexName, setIndexName] = useState<'pof' | 'fopi'>('pof');
