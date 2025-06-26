@@ -13,12 +13,34 @@ const HeatmapOverlay: React.FC<HeatmapOverlayProps> = ({ indexName, base, lead }
     const map = useMap();
     const [imageUrl, setImageUrl] = useState<string | null>(null);
     const [bounds, setBounds] = useState<LatLngBoundsExpression | null>(null);
+    const [mapBounds, setMapBounds] = useState<ReturnType<typeof map.getBounds> | null>(null);
     const abortCtrl = useRef<AbortController | null>(null);
 
     console.log('HeatmapOverlay props:', { indexName, base, lead });
 
     useEffect(() => {
-        if (!map) {
+        if (!map) return;
+
+        const handleMapMove = () => {
+            // Triggers re-render by updating the dependency
+            setMapBounds(map.getBounds());
+        };
+
+        map.on('moveend', handleMapMove);
+        map.on('zoomend', handleMapMove);
+
+        // Initial trigger
+        setMapBounds(map.getBounds());
+
+        return () => {
+            map.off('moveend', handleMapMove);
+            map.off('zoomend', handleMapMove);
+        };
+    }, [map]);
+
+
+    useEffect(() => {
+        if (!map || !mapBounds) {
             console.log('No map available');
             return;
         }
@@ -95,7 +117,7 @@ const HeatmapOverlay: React.FC<HeatmapOverlayProps> = ({ indexName, base, lead }
             console.log('Cleaning up heatmap overlay...');
             ctrl.abort();
         };
-    }, [map, indexName, base, lead]);
+    }, [map, indexName, base, lead, mapBounds]);
 
     console.log('HeatmapOverlay render - imageUrl:', !!imageUrl, 'bounds:', !!bounds);
 
