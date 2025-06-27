@@ -1,0 +1,19 @@
+.leaflet-reset-button {
+    position: absolute !important;
+    top: 200px;
+    z-index: 1000;
+    width: 33px;
+    height: 33px;
+    border: 2px solid rgba(0, 0, 0, 0.2);
+    background-clip: padding-box;
+    background-color: #FFF;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    user-select: none;
+    box-shadow: none;
+}
