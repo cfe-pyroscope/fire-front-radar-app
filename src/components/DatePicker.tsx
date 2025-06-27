@@ -1,14 +1,14 @@
 import React from 'react';
 import { DatePickerInput } from '@mantine/dates';
 import '@mantine/dates/styles.css';
-import '../css/DatePickerComponent.css';
+import '../css/DatePicker.css';
 
 interface DatePickerProps {
     value: Date;
     onChange: (value: Date) => void;
 }
 
-const DatePickerComponent: React.FC<DatePickerProps> = ({ value, onChange }) => {
+const DatePicker: React.FC<DatePickerProps> = ({ value, onChange }) => {
     return (
         <div className="datepicker-container">
             <DatePickerInput
@@ -44,4 +44,4 @@ const DatePickerComponent: React.FC<DatePickerProps> = ({ value, onChange }) => 
     );
 };
 
-export default DatePickerComponent;
+export default DatePicker;

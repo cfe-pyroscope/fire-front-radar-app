@@ -7,9 +7,15 @@ interface HeatmapOverlayProps {
     indexName: string;
     base: string;
     lead: number;
+    onLoadingChange?: (loading: boolean) => void;
 }
 
-const HeatmapOverlay: React.FC<HeatmapOverlayProps> = ({ indexName, base, lead }) => {
+const HeatmapOverlay: React.FC<HeatmapOverlayProps> = ({
+    indexName,
+    base,
+    lead,
+    onLoadingChange,
+}) => {
     const map = useMap();
     const [imageUrl, setImageUrl] = useState<string | null>(null);
     const [bounds, setBounds] = useState<LatLngBoundsExpression | null>(null);
@@ -46,6 +52,7 @@ const HeatmapOverlay: React.FC<HeatmapOverlayProps> = ({ indexName, base, lead }
         }
 
         console.log('Starting heatmap fetch...');
+        onLoadingChange?.(true); // notify parent loading starts
 
         abortCtrl.current?.abort();
         const ctrl = new AbortController();
@@ -104,19 +111,21 @@ const HeatmapOverlay: React.FC<HeatmapOverlayProps> = ({ indexName, base, lead }
 
                 setImageUrl(objectUrl);
                 setBounds(overlayBounds);
-
+                onLoadingChange?.(false); // notify parent loading ends
                 console.log('Heatmap overlay ready!');
 
             } catch (err: any) {
                 if (err.name !== "AbortError") {
                     console.error('Heatmap overlay error:', err);
                 }
+                onLoadingChange?.(false); // notify parent loading ends
             }
         })();
 
         return () => {
             console.log('Cleaning up heatmap overlay...');
             ctrl.abort();
+            onLoadingChange?.(false); // ensure cleanup disables loader
         };
     }, [map, indexName, base, lead, mapBounds]);
 
