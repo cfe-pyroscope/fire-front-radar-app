@@ -18,6 +18,7 @@
     "axios": "^1.9.0",
     "bootstrap": "^5.3.6",
     "dayjs": "^1.11.13",
+    "dom-to-image": "^2.6.0",
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",
     "react": "^18.3.1",
@@ -27,6 +28,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
+    "@types/dom-to-image": "^2.6.7",
     "@types/leaflet": "^1.9.18",
     "@types/leaflet-draw": "^1.0.12",
     "@types/react": "^19.1.2",

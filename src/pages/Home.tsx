@@ -1,5 +1,4 @@
-import { API_BASE_URL } from '../api/config';
-
+import { API_BASE_URL, INITIAL_MAP_BOUNDS, INITIAL_MAP_CENTER, INITIAL_MAP_ZOOM } from '../api/config';
 import React, { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 import { CRS, LatLngBounds } from "leaflet";
@@ -9,79 +8,13 @@ import 'leaflet-draw';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import '../css/Home.css';
 import DatePicker from '../components/DatePicker';
+import DrawControl from '../components/DrawControl';
 import HeatmapController from '../components/HeatmapController';
+import DownloadButton from '../components/DownloadButton';
 import IndexToggle from '../components/IndexToggle';
 import Loader from '../components/Loader';
 import MapLabels from '../components/MapLabels';
-
-
-const DrawControl: React.FC<{ onDrawComplete: (bounds: LatLngBounds) => void }> = ({ onDrawComplete }) => {
-    const map = useMap();
-    const drawnItemsRef = useRef<L.FeatureGroup>(new L.FeatureGroup());
-
-    React.useEffect(() => {
-        const drawnItems = drawnItemsRef.current;
-        map.addLayer(drawnItems);
-
-        const drawControl = new L.Control.Draw({
-            position: 'topleft',
-            draw: {
-                rectangle: {
-                    showArea: false, // ✅ disables faulty area calculation
-                    shapeOptions: {
-                        color: '#96C1FC',
-                        weight: 2,
-                        fillOpacity: 0.2
-                    }
-                },
-                polygon: true,
-                circle: false,
-                polyline: false,
-                marker: false,
-                circlemarker: false
-            },
-            edit: {
-                featureGroup: drawnItems,
-                edit: false,
-                remove: true
-            }
-        });
-
-        map.addControl(drawControl);
-
-        const onDrawCreated = (e: L.DrawEvents.Created) => {
-            const layer = e.layer;
-
-            if (e.layerType === 'rectangle' && layer instanceof L.Rectangle) {
-                const bounds = layer.getBounds();
-
-                console.log('🟩 Rectangle bounds:', bounds.toBBoxString());
-                map.fitBounds(bounds, { padding: [20, 20] });
-                onDrawComplete(bounds);
-            } else if (e.layerType === 'polygon' && layer instanceof L.Polygon) {
-                const bounds = layer.getBounds();
-                console.log('🔷 Polygon bounds:', bounds.toBBoxString());
-                map.fitBounds(bounds, { padding: [20, 20] });
-                onDrawComplete(bounds);
-            } else {
-                console.warn('⚠️ Unknown layer type:', e.layerType);
-            }
-        };
-
-
-
-        map.on(L.Draw.Event.CREATED, onDrawCreated);
-
-        return () => {
-            map.off(L.Draw.Event.CREATED, onDrawCreated);
-            map.removeControl(drawControl);
-            map.removeLayer(drawnItems);
-        };
-    }, [map]);
-
-    return null;
-};
-
+import ResetViewControl from '../components/ResetViewControl';
 
 const Home: React.FC = () => {
     const [indexName, setIndexName] = useState<'pof' | 'fopi'>('pof');
@@ -142,20 +75,23 @@ const Home: React.FC = () => {
                     }
                 }}
             />
+
             {isHeatmapLoading && <Loader message="Loading forecast..." />}
             <MapContainer
-                center={[28, 2]}
-                zoom={2.5}
+                center={INITIAL_MAP_CENTER}
+                zoom={INITIAL_MAP_ZOOM}
                 minZoom={2.5}
                 scrollWheelZoom={true}
                 crs={CRS.EPSG3857}
-                maxBounds={[[-85, -180], [85, 180]]}
+                maxBounds={INITIAL_MAP_BOUNDS}
                 maxBoundsViscosity={1.0}
                 worldCopyJump={false}
                 style={{ height: '100%', width: '100%', zIndex: 0 }}
             >
 
                 <DrawControl onDrawComplete={setDrawnBounds} />
+                <ResetViewControl />
+                <DownloadButton />
 
                 <MapLabels />
 
