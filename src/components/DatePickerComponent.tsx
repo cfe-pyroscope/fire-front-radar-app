@@ -31,7 +31,7 @@ const DatePickerComponent: React.FC<DatePickerProps> = ({ value, onChange }) => 
                     }
                 }}
                 placeholder="Pick date"
-                label="Event date"
+                label="Pick date"
                 required
                 maxDate={new Date()}
                 clearable={false}
