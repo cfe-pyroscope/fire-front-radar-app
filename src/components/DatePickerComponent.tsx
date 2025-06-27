@@ -22,8 +22,10 @@ const DatePickerComponent: React.FC<DatePickerProps> = ({ value, onChange }) => 
                         const normalized = new Date(Date.UTC(
                             parsedDate.getFullYear(),
                             parsedDate.getMonth(),
-                            parsedDate.getDate()
+                            parsedDate.getDate(),
+                            12 // shift to 12:00 UTC to avoid selecting midnight, which is earlier than the first forecast time in NetCDF files
                         ));
+
                         console.log('Normalized date in DatePicker:', normalized);
                         onChange(normalized); // Propagate to parent
                     } else {

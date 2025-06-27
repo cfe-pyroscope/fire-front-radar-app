@@ -44,15 +44,7 @@ const HeatmapController: React.FC<HeatmapControllerProps> = ({ indexName, select
 
         const fetchMetadata = async () => {
             try {
-                // Create base time at midnight UTC for the selected date
-                const baseMidnight = new Date(Date.UTC(
-                    selectedDate.getUTCFullYear(),
-                    selectedDate.getUTCMonth(),
-                    selectedDate.getUTCDate(),
-                    0, 0, 0, 0 // Explicitly set time to midnight
-                ));
-
-                const baseIso = baseMidnight.toISOString();
+                const baseIso = selectedDate.toISOString();
                 console.log("Base ISO time:", baseIso);
 
                 const url = `${API_BASE_URL}/api/${indexName}?base_time=${baseIso}&lead_hours=0`;
@@ -75,19 +67,7 @@ const HeatmapController: React.FC<HeatmapControllerProps> = ({ indexName, select
 
                 setForecastSteps(data.forecast_steps);
                 setSelectedLeadHours(data.forecast_steps[0].lead_hours);
-
-                // Calculate the file base time
-                const firstStep = data.forecast_steps[0];
-                const fileBase = new Date(
-                    new Date(firstStep.time).getTime() -
-                    firstStep.lead_hours * 3600_000
-                );
-
-                console.log("First forecast step:", firstStep);
-                console.log("Calculated file base time:", fileBase.toISOString());
-                console.log("Original base time requested:", baseIso);
-
-                setBaseTime(fileBase.toISOString());
+                setBaseTime(baseIso);
                 setError(null);
 
             } catch (err: any) {
