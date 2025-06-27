@@ -8,9 +8,10 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import '../css/Home.css';
+import DatePicker from '../components/DatePicker';
 import HeatmapController from '../components/HeatmapController';
 import IndexToggle from '../components/IndexToggle';
-import DatePickerComponent from '../components/DatePickerComponent';
+import Loader from '../components/Loader';
 import MapLabels from '../components/MapLabels';
 
 
@@ -86,6 +87,7 @@ const Home: React.FC = () => {
     const [indexName, setIndexName] = useState<'pof' | 'fopi'>('pof');
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [drawnBounds, setDrawnBounds] = useState<LatLngBounds | null>(null);
+    const [isHeatmapLoading, setIsHeatmapLoading] = useState(false);
 
     console.log('Home component render - selectedDate:', selectedDate, 'isValid:', selectedDate instanceof Date && !isNaN(selectedDate.getTime()));
 
@@ -128,7 +130,7 @@ const Home: React.FC = () => {
     return (
         <div className="map-container">
             <IndexToggle currentIndex={indexName} onToggle={setIndexName} />
-            <DatePickerComponent
+            <DatePicker
                 value={selectedDate}
                 onChange={(date) => {
                     const isValid = date instanceof Date && !isNaN(date.getTime());
@@ -140,7 +142,7 @@ const Home: React.FC = () => {
                     }
                 }}
             />
-
+            {isHeatmapLoading && <Loader message="Loading forecast..." />}
             <MapContainer
                 center={[28, 2]}
                 zoom={2.5}
@@ -168,6 +170,7 @@ const Home: React.FC = () => {
                     indexName={indexName}
                     selectedDate={selectedDate}
                     drawnBounds={drawnBounds}
+                    onHeatmapLoadingChange={setIsHeatmapLoading}
                 />
 
                 <TileLayer

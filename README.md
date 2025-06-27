@@ -13,6 +13,7 @@ src/
 │   ├── HeatmapController.tsx   # Fetches metadata & forecast steps; passes props to HeatmapOverlay  
 │   ├── HeatmapOverlay.tsx      # Renders Leaflet ImageOverlay for fire data from NetCDF backend  
 │   └── IndexToggle.tsx         # Mantine SegmentedControl to toggle between "fopi" and "pof" indexes  
+│   └── Loader.tsx              # Mantine Loader while data and heatmap are loaded  
 │   └── MapLabels.tsx            # To have map labels over the heatmap image  
 │  
 ├── pages/  

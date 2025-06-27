@@ -18,9 +18,14 @@ interface MetadataResponse {
 interface HeatmapControllerProps {
     indexName: "fopi" | "pof";
     selectedDate: Date;
+    onHeatmapLoadingChange?: (loading: boolean) => void;
 }
 
-const HeatmapController: React.FC<HeatmapControllerProps> = ({ indexName, selectedDate }) => {
+const HeatmapController: React.FC<HeatmapControllerProps> = ({
+    indexName,
+    selectedDate,
+    onHeatmapLoadingChange
+}) => {
     const [forecastSteps, setForecastSteps] = useState<ForecastStep[]>([]);
     const [selectedLeadHours, setSelectedLeadHours] = useState<number | null>(null);
     const [baseTime, setBaseTime] = useState<string | null>(null);
@@ -31,6 +36,7 @@ const HeatmapController: React.FC<HeatmapControllerProps> = ({ indexName, select
         // Reset state when dependencies change
         setError(null);
         setLoading(true);
+        onHeatmapLoadingChange?.(true);
 
         // More robust date validation
         if (!selectedDate || !(selectedDate instanceof Date) || isNaN(selectedDate.getTime())) {
@@ -121,6 +127,7 @@ const HeatmapController: React.FC<HeatmapControllerProps> = ({ indexName, select
                     indexName={indexName}
                     base={baseTime}              // ✅ original file base
                     lead={selectedLeadHours}     // ✅ new lead selected
+                    onLoadingChange={onHeatmapLoadingChange}
                 />
             )}
         </>
