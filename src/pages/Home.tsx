@@ -1,4 +1,6 @@
-import React, { useState, useRef } from 'react';
+import { API_BASE_URL } from '../api/config';
+
+import React, { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 import { CRS, LatLngBounds } from "leaflet";
 import L from 'leaflet';
@@ -10,6 +12,7 @@ import HeatmapController from '../components/HeatmapController';
 import IndexToggle from '../components/IndexToggle';
 import DatePickerComponent from '../components/DatePickerComponent';
 import MapLabels from '../components/MapLabels';
+
 
 const DrawControl: React.FC<{ onDrawComplete: (bounds: LatLngBounds) => void }> = ({ onDrawComplete }) => {
     const map = useMap();
@@ -81,10 +84,45 @@ const DrawControl: React.FC<{ onDrawComplete: (bounds: LatLngBounds) => void }> 
 
 const Home: React.FC = () => {
     const [indexName, setIndexName] = useState<'pof' | 'fopi'>('pof');
-    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [drawnBounds, setDrawnBounds] = useState<LatLngBounds | null>(null);
 
     console.log('Home component render - selectedDate:', selectedDate, 'isValid:', selectedDate instanceof Date && !isNaN(selectedDate.getTime()));
+
+
+    useEffect(() => {
+        const fetchLatestDate = async () => {
+            try {
+                console.log("🧪 Using API_BASE_URL:", API_BASE_URL);
+                console.log('Fetching latest date...');
+                const res = await fetch(`${API_BASE_URL}/api/latest-date`);
+                console.log('Response status:', res.status);
+                if (!res.ok) throw new Error('Failed to fetch latest date');
+                const data = await res.json();
+                console.log("Received:", data);
+
+                const latest_date = data.latest_date;
+                const parsed = new Date(latest_date);
+
+                if (!isNaN(parsed.getTime())) {
+                    const utcDate = new Date(Date.UTC(parsed.getFullYear(), parsed.getMonth(), parsed.getDate()));
+                    setSelectedDate(utcDate);
+                } else {
+                    console.warn('❌ Invalid date from API:', latest_date);
+                }
+
+            } catch (err) {
+                console.error('🔥 Failed to fetch latest date:', err);
+            }
+        };
+
+        fetchLatestDate();
+    }, []);
+
+
+    if (!selectedDate) {
+        return <div>Loading map and data for latest date...</div>;
+    }
 
     return (
         <div className="map-container">

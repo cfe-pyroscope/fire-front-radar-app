@@ -26,7 +26,7 @@ const ForecastSelect: React.FC<ForecastSelectProps> = ({
     return (
         <div className="forecast-select-cnt">
             <Select
-                label="Most recent forecast"
+                label="Available forecast"
                 placeholder="Pick forecast time"
                 value={selectedLeadHours?.toString() ?? null}
                 onChange={(value) => {
