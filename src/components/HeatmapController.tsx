@@ -97,6 +97,14 @@ const HeatmapController: React.FC<HeatmapControllerProps> = ({ indexName, select
         );
     }
 
+    console.log("indexName:", indexName);
+    console.log("selectedLeadHours:", selectedLeadHours);
+    console.log("forecastSteps:", forecastSteps);
+
+    const selectedStep = forecastSteps.find(
+        (s) => s.lead_hours === selectedLeadHours
+    );
+
     return (
         <>
             {forecastSteps.length > 0 && (
@@ -107,12 +115,12 @@ const HeatmapController: React.FC<HeatmapControllerProps> = ({ indexName, select
                 />
             )}
 
-            {baseTime !== null && selectedLeadHours !== null && (
+            {baseTime !== null && selectedStep && (
                 <HeatmapOverlay
                     key={`${indexName}-${baseTime}-${selectedLeadHours}`}
                     indexName={indexName}
-                    base={baseTime}
-                    lead={selectedLeadHours}
+                    base={baseTime}              // ✅ original file base
+                    lead={selectedLeadHours}     // ✅ new lead selected
                 />
             )}
         </>

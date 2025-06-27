@@ -61,7 +61,8 @@ const HeatmapOverlay: React.FC<HeatmapOverlayProps> = ({ indexName, base, lead }
 
                 const url =
                     `${API_BASE_URL}/api/${indexName}/heatmap/image` +
-                    `?base_time=${base}&lead_hours=${lead}&bbox=${bbox}`;
+                    `?base_time=${new Date(base).toISOString()}&lead_hours=${lead}&bbox=${bbox}`;
+
 
                 console.log('Fetching heatmap from:', url);
 
