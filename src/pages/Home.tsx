@@ -105,7 +105,8 @@ const Home: React.FC = () => {
                 const parsed = new Date(latest_date);
 
                 if (!isNaN(parsed.getTime())) {
-                    const utcDate = new Date(Date.UTC(parsed.getFullYear(), parsed.getMonth(), parsed.getDate()));
+                    // const utcDate = new Date(Date.UTC(parsed.getFullYear(), parsed.getMonth(), parsed.getDate()));
+                    const utcDate = new Date(Date.UTC(parsed.getFullYear(), parsed.getMonth(), parsed.getDate(), 12)); // shift to 12:00 UTC to avoid selecting midnight, which is earlier than the first forecast time in NetCDF files
                     setSelectedDate(utcDate);
                 } else {
                     console.warn('❌ Invalid date from API:', latest_date);
@@ -162,13 +163,12 @@ const Home: React.FC = () => {
                     noWrap={true}
                 />
 
-                {selectedDate && (
-                    <HeatmapController
-                        indexName={indexName}
-                        selectedDate={selectedDate}
-                        drawnBounds={drawnBounds}
-                    />
-                )}
+                <HeatmapController
+                    key={`${indexName}-${selectedDate.toISOString()}`}
+                    indexName={indexName}
+                    selectedDate={selectedDate}
+                    drawnBounds={drawnBounds}
+                />
 
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
