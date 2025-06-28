@@ -9,12 +9,15 @@ import 'leaflet-draw/dist/leaflet.draw.css';
 import '../css/Home.css';
 import DatePicker from '../components/DatePicker';
 import DrawControl from '../components/DrawControl';
-import HeatmapController from '../components/HeatmapController';
 import DownloadButton from '../components/DownloadButton';
+import LogoContainer from '../components/LogoContainer';
+import HeatmapController from '../components/HeatmapController';
 import IndexToggle from '../components/IndexToggle';
 import Loader from '../components/Loader';
 import MapLabels from '../components/MapLabels';
 import ResetViewControl from '../components/ResetViewControl';
+import logo1 from '../assets/FFR-logo.svg';
+import logo2 from '../assets/ECMWF-logo-white.png';
 
 const Home: React.FC = () => {
     const [indexName, setIndexName] = useState<'pof' | 'fopi'>('pof');
@@ -61,62 +64,72 @@ const Home: React.FC = () => {
     }
 
     return (
-        <div className="map-container">
-            <IndexToggle currentIndex={indexName} onToggle={setIndexName} />
-            <DatePicker
-                value={selectedDate}
-                onChange={(date) => {
-                    const isValid = date instanceof Date && !isNaN(date.getTime());
-                    console.log('DatePicker onChange - received:', date, 'isValid:', isValid);
-
-                    if (isValid) {
-                        setSelectedDate(date);
-                        console.log('Successfully set new date:', date);
-                    }
-                }}
+        <>
+            <LogoContainer
+                logo1Src={logo1}
+                logo2Src={logo2}
+                alt1="Fire Front Radar App Logo"
+                alt2="ECMWF Logo"
+                betweenText="Fire Front Radar"
             />
 
-            {isHeatmapLoading && <Loader message="Loading forecast..." />}
-            <MapContainer
-                center={INITIAL_MAP_CENTER}
-                zoom={INITIAL_MAP_ZOOM}
-                minZoom={2.5}
-                scrollWheelZoom={true}
-                crs={CRS.EPSG3857}
-                maxBounds={INITIAL_MAP_BOUNDS}
-                maxBoundsViscosity={1.0}
-                worldCopyJump={false}
-                style={{ height: '100%', width: '100%', zIndex: 0 }}
-            >
+            <div className="map-container">
+                <IndexToggle currentIndex={indexName} onToggle={setIndexName} />
+                <DatePicker
+                    value={selectedDate}
+                    onChange={(date) => {
+                        const isValid = date instanceof Date && !isNaN(date.getTime());
+                        console.log('DatePicker onChange - received:', date, 'isValid:', isValid);
 
-                <DrawControl onDrawComplete={setDrawnBounds} />
-                <ResetViewControl />
-                <DownloadButton />
-
-                <MapLabels />
-
-                <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                    url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png"
-                    noWrap={true}
+                        if (isValid) {
+                            setSelectedDate(date);
+                            console.log('Successfully set new date:', date);
+                        }
+                    }}
                 />
 
-                <HeatmapController
-                    key={`${indexName}-${selectedDate.toISOString()}`}
-                    indexName={indexName}
-                    selectedDate={selectedDate}
-                    drawnBounds={drawnBounds}
-                    onHeatmapLoadingChange={setIsHeatmapLoading}
-                />
+                {isHeatmapLoading && <Loader message="Loading forecast..." />}
+                <MapContainer
+                    center={INITIAL_MAP_CENTER}
+                    zoom={INITIAL_MAP_ZOOM}
+                    minZoom={2.5}
+                    scrollWheelZoom={true}
+                    crs={CRS.EPSG3857}
+                    maxBounds={INITIAL_MAP_BOUNDS}
+                    maxBoundsViscosity={1.0}
+                    worldCopyJump={false}
+                    style={{ height: '100%', width: '100%', zIndex: 0 }}
+                >
 
-                <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                    url="https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png"
-                    noWrap={true}
-                    pane="labels"
-                />
-            </MapContainer>
-        </div>
+                    <DrawControl onDrawComplete={setDrawnBounds} />
+                    <ResetViewControl />
+                    <DownloadButton />
+
+                    <MapLabels />
+
+                    <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                        url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png"
+                        noWrap={true}
+                    />
+
+                    <HeatmapController
+                        key={`${indexName}-${selectedDate.toISOString()}`}
+                        indexName={indexName}
+                        selectedDate={selectedDate}
+                        drawnBounds={drawnBounds}
+                        onHeatmapLoadingChange={setIsHeatmapLoading}
+                    />
+
+                    <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                        url="https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png"
+                        noWrap={true}
+                        pane="labels"
+                    />
+                </MapContainer>
+            </div>
+        </>
     );
 };
 

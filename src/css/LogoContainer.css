@@ -1,0 +1,42 @@
+.logo_cnt {
+    width: 350px;
+    height: 40px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    background-color: rgba(0, 0, 0, 0.15);
+    border: none;
+    border-radius: 12px;
+    padding: 3px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    overflow: hidden;
+}
+
+
+.logo_block {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: 100%;
+}
+
+.logo1 {
+    width: 30px !important;
+    height: auto;
+    display: block;
+}
+
+.logo2 {
+    width: 88px !important;
+    height: auto !important;
+    display: block;
+}
+
+.logo_text {
+    font-size: 1.2rem !important;
+    font-weight: 800 !important;
+    color: #183449 !important;
+}
