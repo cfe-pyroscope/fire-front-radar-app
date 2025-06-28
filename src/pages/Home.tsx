@@ -14,6 +14,7 @@ import LogoContainer from '../components/LogoContainer';
 import HeatmapController from '../components/HeatmapController';
 import IndexToggle from '../components/IndexToggle';
 import Loader from '../components/Loader';
+import LocationSearch from '../components/LocationSearch';
 import MapLabels from '../components/MapLabels';
 import ResetViewControl from '../components/ResetViewControl';
 import logo1 from '../assets/FFR-logo.svg';
@@ -101,6 +102,7 @@ const Home: React.FC = () => {
                     style={{ height: '100%', width: '100%', zIndex: 0 }}
                 >
 
+                    <LocationSearch />
                     <DrawControl onDrawComplete={setDrawnBounds} />
                     <ResetViewControl />
                     <DownloadButton />
