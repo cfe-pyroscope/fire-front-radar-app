@@ -1,4 +1,3 @@
-// src/components/LocationSearch.tsx
 import React, { useEffect } from "react";
 import { GeoSearchControl, OpenStreetMapProvider } from "leaflet-geosearch";
 import { useMap } from "react-leaflet";
