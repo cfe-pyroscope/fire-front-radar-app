@@ -1,3 +1,5 @@
+/* NOT USED */
+
 import React from "react";
 import { Slider, Text } from "@mantine/core";
 import "../css/ForecastSlider.css";

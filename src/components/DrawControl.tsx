@@ -48,7 +48,7 @@ const DrawControl: React.FC<DrawControlProps> = ({ onDrawComplete }) => {
 
             if (e.layerType === 'rectangle' && layer instanceof L.Rectangle) {
                 const bounds = layer.getBounds();
-                console.log('🟩 Rectangle bounds:', bounds.toBBoxString());
+                console.log('Rectangle bounds:', bounds.toBBoxString());
                 map.fitBounds(bounds, { padding: [20, 20] });
                 onDrawComplete(bounds);
             } else if (e.layerType === 'polygon' && layer instanceof L.Polygon) {
