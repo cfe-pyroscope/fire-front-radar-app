@@ -11,6 +11,7 @@ src/
 |  
 ├── components/  
 │   ├── DatePickerComponent.tsx # Mantine DatePickerInput; allows user to pick a date, updates app state
+│   ├── ColorBarLegend.tsx      # Dynamic color legend based on selected area
 │   ├── DrawControl.tsx         # Drawing tools; allow user to select an area on the map
 │   ├── DownloadButton.tsx      # Download button; allows user to download the heatmap image
 │   ├── ForecastSelect.tsx      # Mantine ForecastSelect; allows user to pick a forecast relate to a date  

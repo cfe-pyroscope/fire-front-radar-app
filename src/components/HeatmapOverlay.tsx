@@ -8,6 +8,7 @@ interface HeatmapOverlayProps {
     base: string;
     lead: number;
     onLoadingChange?: (loading: boolean) => void;
+    onScaleChange?: (scale: { vmin: number; vmax: number } | null) => void;
 }
 
 const HeatmapOverlay: React.FC<HeatmapOverlayProps> = ({
@@ -15,10 +16,12 @@ const HeatmapOverlay: React.FC<HeatmapOverlayProps> = ({
     base,
     lead,
     onLoadingChange,
+    onScaleChange,
 }) => {
     const map = useMap();
     const [imageUrl, setImageUrl] = useState<string | null>(null);
     const [bounds, setBounds] = useState<LatLngBoundsExpression | null>(null);
+    const [scale, setScale] = useState<{ vmin: number; vmax: number } | null>(null);
     const [mapBounds, setMapBounds] = useState<ReturnType<typeof map.getBounds> | null>(null);
     const abortCtrl = useRef<AbortController | null>(null);
 
@@ -73,7 +76,7 @@ const HeatmapOverlay: React.FC<HeatmapOverlayProps> = ({
 
                 console.log('Fetching heatmap from:', url);
 
-                /* ---------- 2) fetch PNG ---------- */
+                /* ---------- 2) fetch PNG and header properties ---------- */
                 const res = await fetch(url, { signal: ctrl.signal });
                 console.log('Heatmap response status:', res.status);
 
@@ -90,6 +93,22 @@ const HeatmapOverlay: React.FC<HeatmapOverlayProps> = ({
                     console.error('Missing X-Extent-3857 header');
                     throw new Error("Missing X-Extent-3857 header");
                 }
+
+
+                const vminHeader = res.headers.get("x-scale-min");
+                const vmaxHeader = res.headers.get("x-scale-max");
+
+                if (!vminHeader || !vmaxHeader) {
+                    console.warn("⚠️ Missing scale headers");
+                    onScaleChange?.(null);
+                } else {
+                    const vmin = parseFloat(vminHeader);
+                    const vmax = parseFloat(vmaxHeader);
+                    console.log("📏 Setting scale from heatmap headers:", { vmin, vmax });
+                    onScaleChange?.({ vmin, vmax });
+                }
+
+
 
                 /* ---------- 3) extent → LatLngBounds ---------- */
                 const [left, right, bottom, top] = extentHdr.split(",").map(Number);

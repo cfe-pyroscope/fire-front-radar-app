@@ -6,13 +6,36 @@ import '../css/DatePicker.css';
 interface DatePickerProps {
     value: Date;
     onChange: (value: Date) => void;
+    availableDates?: Date[];
 }
 
-const DatePicker: React.FC<DatePickerProps> = ({ value, onChange }) => {
+const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, availableDates }) => {
     return (
         <div className="datepicker-container">
             <DatePickerInput
                 value={value}
+                minDate={availableDates?.[0]}
+                maxDate={availableDates?.[availableDates.length - 1]}
+                excludeDate={(input) => {
+                    const date = input instanceof Date ? input : new Date(input);
+
+                    if (!availableDates || isNaN(date.getTime())) {
+                        // console.log("🛑 Skipping exclusion check due to invalid date:", input);
+                        return false;
+                    }
+
+                    const targetDateStr = date.toDateString();
+                    const match = availableDates.some(d => d.toDateString() === targetDateStr);
+
+                    if (!match) {
+                        // console.log("⛔️ Excluding date:", targetDateStr);
+                    }
+
+                    return !match;
+                }}
+
+
+
                 onChange={(dateInput) => {
                     console.log('DatePicker raw change:', dateInput);
                     // Convert input to Date, whether it's already a Date or a string

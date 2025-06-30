@@ -11,3 +11,10 @@
     font-size: 14px;
     color: red;
 }
+
+.colorbar-container {
+    position: absolute;
+    bottom: 20px;
+    right: 10px;
+    z-index: 1000;
+}

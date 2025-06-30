@@ -1,0 +1,36 @@
+.colorbar-legend {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px;
+    /* 
+    background: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2); 
+    border-radius: 8px;
+        */
+    background: t;
+    border: none;
+    box-shadow: none;
+    width: 180px;
+    font-size: 12px;
+}
+
+.colorbar {
+    display: flex;
+    width: 100%;
+    height: 14px;
+    margin-bottom: 4px;
+    overflow: hidden;
+    border-radius: 4px;
+}
+
+.color-segment {
+    flex: 1;
+}
+
+.labels {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
