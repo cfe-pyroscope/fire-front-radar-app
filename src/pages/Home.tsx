@@ -22,12 +22,36 @@ import logo2 from '../assets/ECMWF-logo-white.png';
 
 const Home: React.FC = () => {
     const [indexName, setIndexName] = useState<'pof' | 'fopi'>('pof');
+    const [availableDates, setAvailableDates] = useState<Date[] | null>(null);
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [drawnBounds, setDrawnBounds] = useState<LatLngBounds | null>(null);
     const [isHeatmapLoading, setIsHeatmapLoading] = useState(false);
 
     console.log('Home component render - selectedDate:', selectedDate, 'isValid:', selectedDate instanceof Date && !isNaN(selectedDate.getTime()));
 
+
+    useEffect(() => {
+        const fetchAvailableDates = async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/available-dates?index=${indexName}`);
+                if (!res.ok) throw new Error("Failed to fetch available dates");
+                const data = await res.json();
+                const parsedDates = data.available_dates.map((d: string) =>
+                    new Date(Date.UTC(
+                        new Date(d).getFullYear(),
+                        new Date(d).getMonth(),
+                        new Date(d).getDate(),
+                        12
+                    ))
+                );
+                setAvailableDates(parsedDates);
+            } catch (err) {
+                console.error("🔥 Failed to fetch available dates:", err);
+            }
+        };
+
+        fetchAvailableDates();
+    }, [indexName]);
 
     useEffect(() => {
         const fetchLatestDate = async () => {
@@ -87,6 +111,7 @@ const Home: React.FC = () => {
                             console.log('Successfully set new date:', date);
                         }
                     }}
+                    availableDates={availableDates}
                 />
 
                 {isHeatmapLoading && <Loader message="Loading forecast..." />}

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import ColorBarLegend from "./ColorBarLegend";
 import ForecastSelect from "./ForecastSelect";
 import HeatmapOverlay from "./HeatmapOverlay";
 import "../css/HeatmapController.css";
@@ -31,6 +32,8 @@ const HeatmapController: React.FC<HeatmapControllerProps> = ({
     const [baseTime, setBaseTime] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
+    const [scale, setScale] = useState<{ vmin: number; vmax: number } | null>(null);
+
 
     useEffect(() => {
         // Reset state when dependencies change
@@ -113,6 +116,16 @@ const HeatmapController: React.FC<HeatmapControllerProps> = ({
 
     return (
         <>
+            {scale && (
+                <>
+                    {console.log("🎨 Rendering ColorBarLegend with scale:", scale)}
+                    <div className="colorbar-container">
+                        <ColorBarLegend vmin={scale.vmin} vmax={scale.vmax} />
+                    </div>
+                </>
+            )}
+
+
             {forecastSteps.length > 0 && (
                 <ForecastSelect
                     forecastSteps={forecastSteps}
@@ -128,6 +141,7 @@ const HeatmapController: React.FC<HeatmapControllerProps> = ({
                     base={baseTime}              // ✅ original file base
                     lead={selectedLeadHours}     // ✅ new lead selected
                     onLoadingChange={onHeatmapLoadingChange}
+                    onScaleChange={setScale}
                 />
             )}
         </>
