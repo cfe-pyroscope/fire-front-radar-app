@@ -16,4 +16,19 @@
     font-weight: bold;
     user-select: none;
     box-shadow: none;
+    transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.leaflet-reset-button:hover:not(.disabled) {
+    background-color: #f5f5f5;
+}
+
+.leaflet-reset-button.disabled {
+    opacity: 0.4;
+    cursor: default;
+    pointer-events: none;
+}
+
+.leaflet-reset-button:active:not(.disabled) {
+    background-color: #e8e8e8;
 }

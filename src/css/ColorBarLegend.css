@@ -3,13 +3,10 @@
     flex-direction: column;
     align-items: center;
     padding: 8px;
-    /* 
-    background: white;
+    /*     background: white;
     border: 1px solid #ccc;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2); 
-    border-radius: 8px;
-        */
-    background: t;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    border-radius: 8px; */
     border: none;
     box-shadow: none;
     width: 180px;
@@ -23,11 +20,13 @@
     margin-bottom: 4px;
     overflow: hidden;
     border-radius: 4px;
+    box-shadow: -4px 0 8px rgba(0, 0, 0, 0.1);
 }
 
 .color-segment {
     flex: 1;
 }
+
 
 .labels {
     display: flex;

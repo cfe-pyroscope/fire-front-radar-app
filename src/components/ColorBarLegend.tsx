@@ -10,6 +10,9 @@ const ColorBarLegend: React.FC<Props> = ({ vmin, vmax }) => {
     const colors = ["#00000000", "#fff7ec", "#fee8c8", "#fdd49e", "#fdbb84",
         "#fc8d59", "#ef6548", "#d7301f", "#b30000", "#7f0000"]
 
+    const displayVmin = vmin.toFixed(2) === "0.00" ? "0" : vmin.toFixed(2);
+    const displayVmax = vmax.toFixed(2);
+
     return (
         <div className="colorbar-legend">
             <div className="colorbar">
@@ -22,8 +25,8 @@ const ColorBarLegend: React.FC<Props> = ({ vmin, vmax }) => {
                 ))}
             </div>
             <div className="labels">
-                <span>{vmin.toFixed(2)}</span>
-                <span>{vmax.toFixed(2)}</span>
+                <span>{displayVmin}</span>
+                <span>{displayVmax}</span>
             </div>
         </div>
     );
