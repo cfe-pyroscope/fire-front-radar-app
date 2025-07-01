@@ -18,6 +18,7 @@ const DownloadButton = () => {
                 container.innerHTML = ReactDOMServer.renderToString(<IconDownload size={18} />);
 
                 container.onclick = async () => {
+
                     const mapEl = document.querySelector('.leaflet-container') as HTMLElement;
                     if (!mapEl) return;
 
@@ -25,7 +26,18 @@ const DownloadButton = () => {
                     controls.forEach((el) => (el as HTMLElement).style.visibility = 'hidden');
 
                     try {
-                        const dataUrl = await domtoimage.toPng(mapEl);
+                        // Delay to ensure rendering completes
+                        await new Promise((resolve) => setTimeout(resolve, 100));
+
+                        // Force explicit size to prevent overflow/extra area
+                        const width = mapEl.offsetWidth;
+                        const height = mapEl.offsetHeight;
+
+                        const dataUrl = await domtoimage.toPng(mapEl, {
+                            width,
+                            height,
+                        });
+
                         const link = document.createElement('a');
                         link.href = dataUrl;
                         link.download = 'heatmap_map.png';
