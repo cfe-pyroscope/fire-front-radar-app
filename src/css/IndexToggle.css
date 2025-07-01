@@ -8,3 +8,17 @@
     border-radius: 8px;
     box-shadow: 0 0 4px rgba(0, 0, 0, 0.15); */
 }
+
+.index-info-button {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 4px;
+    position: absolute;
+    z-index: 1001;
+    right: -10px;
+    top: -10px;
+}
+
+.mantine-Popover-dropdown {
+    z-index: 1001 !important;
+}

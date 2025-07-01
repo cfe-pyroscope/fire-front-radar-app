@@ -16,6 +16,7 @@ src/
 │   ├── ForecastSelect.tsx      # Mantine ForecastSelect; allows user to pick a forecast relate to a date    
 │   ├── HeatmapController.tsx   # Fetches metadata & forecast steps; passes props to HeatmapOverlay    
 │   ├── HeatmapOverlay.tsx      # Renders Leaflet ImageOverlay for fire data from NetCDF backend   
+│   └── IndexInfoPopover.tsx    # Mantine popover to explain the relative index
 │   └── IndexToggle.tsx         # Mantine SegmentedControl to toggle between "fopi" and "pof" indexes   
 │   └── Loader.tsx              # Mantine Loader while data and heatmap are loaded   
 │   └── Logo.tsx                # App and ECMWF logos   
