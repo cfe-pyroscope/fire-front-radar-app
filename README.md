@@ -4,23 +4,22 @@
 
 src/  
 ├── api/  
-│   ├── client.ts               # HTTP client setup (e.g. fetch wrapper or axios instance)  
-│   └── config.ts               # Base API URL and environment config  
+│   ├── client.ts               # HTTP client setup (e.g. fetch wrapper or axios instance)      
 │  
-├── assets/                     # images  
+├── assets/                     # images   
 |  
 ├── components/  
-│   ├── DatePickerComponent.tsx # Mantine DatePickerInput; allows user to pick a date, updates app state
-│   ├── ColorBarLegend.tsx      # Dynamic color legend based on selected area
-│   ├── DrawControl.tsx         # Drawing tools; allow user to select an area on the map
-│   ├── DownloadButton.tsx      # Download button; allows user to download the heatmap image
-│   ├── ForecastSelect.tsx      # Mantine ForecastSelect; allows user to pick a forecast relate to a date  
-│   ├── HeatmapController.tsx   # Fetches metadata & forecast steps; passes props to HeatmapOverlay  
-│   ├── HeatmapOverlay.tsx      # Renders Leaflet ImageOverlay for fire data from NetCDF backend  
-│   └── IndexToggle.tsx         # Mantine SegmentedControl to toggle between "fopi" and "pof" indexes  
-│   └── Loader.tsx              # Mantine Loader while data and heatmap are loaded  
-│   └── Logo.tsx                # App and ECMWF logos  
-│   └── MapLabels.tsx           # To have map labels over the heatmap image  
+│   ├── ColorBarLegend.tsx      # Dynamic color legend based on selected area   
+│   ├── DatePickerComponent.tsx # Mantine DatePickerInput; allows user to pick a date, updates app state  
+│   ├── DrawControl.tsx         # Drawing tools; allow user to select an area on the map  
+│   ├── DownloadButton.tsx      # Download button; allows user to download the heatmap image  
+│   ├── ForecastSelect.tsx      # Mantine ForecastSelect; allows user to pick a forecast relate to a date    
+│   ├── HeatmapController.tsx   # Fetches metadata & forecast steps; passes props to HeatmapOverlay    
+│   ├── HeatmapOverlay.tsx      # Renders Leaflet ImageOverlay for fire data from NetCDF backend   
+│   └── IndexToggle.tsx         # Mantine SegmentedControl to toggle between "fopi" and "pof" indexes   
+│   └── Loader.tsx              # Mantine Loader while data and heatmap are loaded   
+│   └── Logo.tsx                # App and ECMWF logos   
+│   └── MapLabels.tsx           # To have map labels over the heatmap image   
 │  
 ├── pages/  
 │   └── Home.tsx                # Main map dashboard; combines map, toggle, date picker, and controller  
@@ -28,6 +27,9 @@ src/
 ├── routes/  
 │   └── Router.tsx              # React Router setup; maps routes to components/pages  
 │  
+├── utils/  
+│   └── config.ts               # Base API URL and environment config  
+│   
 ├── App.tsx                     # Root component, wraps app layout; could be minimal if Router is main handler  
 ├── main.tsx                    # Entry point; ReactDOM render, wraps app with MantineProvider and Router  
 

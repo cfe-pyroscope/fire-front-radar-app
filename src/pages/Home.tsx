@@ -88,6 +88,11 @@ const Home: React.FC = () => {
         return <div>Loading map and data for latest date...</div>;
     }
 
+    const isDateInAvailableDates = (date: Date, dates: Date[] | null) => {
+        if (!dates) return false;
+        return dates.some(d => d.toDateString() === date.toDateString());
+    };
+
     return (
         <>
             <LogoContainer
@@ -114,7 +119,10 @@ const Home: React.FC = () => {
                     availableDates={availableDates}
                 />
 
-                {isHeatmapLoading && <Loader message="Loading forecast..." />}
+                {isHeatmapLoading && isDateInAvailableDates(selectedDate, availableDates) && (
+                    <Loader message="Loading forecast..." />
+                )}
+
                 <MapContainer
                     center={INITIAL_MAP_CENTER}
                     zoom={INITIAL_MAP_ZOOM}
@@ -140,13 +148,19 @@ const Home: React.FC = () => {
                         noWrap={true}
                     />
 
-                    <HeatmapController
-                        key={`${indexName}-${selectedDate.toISOString()}`}
-                        indexName={indexName}
-                        selectedDate={selectedDate}
-                        drawnBounds={drawnBounds}
-                        onHeatmapLoadingChange={setIsHeatmapLoading}
-                    />
+                    {isDateInAvailableDates(selectedDate, availableDates) ? (
+                        <HeatmapController
+                            key={`${indexName}-${selectedDate.toISOString()}`}
+                            indexName={indexName}
+                            selectedDate={selectedDate}
+                            drawnBounds={drawnBounds}
+                            onHeatmapLoadingChange={setIsHeatmapLoading}
+                        />
+                    ) : (
+                        <div className="forecast-error">
+                            ⚠️ No data available for {selectedDate.toDateString()} in index "{indexName}". Please choose a different date.
+                        </div>
+                    )}
 
                     <TileLayer
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
