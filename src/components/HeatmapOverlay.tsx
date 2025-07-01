@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { CRS, Point, type LatLngBoundsExpression } from "leaflet";
 import { useMap, ImageOverlay } from "react-leaflet";
-import { API_BASE_URL } from "../api/config";
+import { API_BASE_URL } from "../utils/config";
 
 interface HeatmapOverlayProps {
     indexName: string;

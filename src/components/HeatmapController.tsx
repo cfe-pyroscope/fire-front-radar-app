@@ -3,7 +3,7 @@ import ColorBarLegend from "./ColorBarLegend";
 import ForecastSelect from "./ForecastSelect";
 import HeatmapOverlay from "./HeatmapOverlay";
 import "../css/HeatmapController.css";
-import { API_BASE_URL } from "../api/config";
+import { API_BASE_URL } from "../utils/config";
 
 interface ForecastStep {
     time: string;

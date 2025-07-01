@@ -85,14 +85,9 @@ const DrawControl: React.FC<DrawControlProps> = ({ onDrawComplete }) => {
             } else {
                 console.warn('⚠️ Unknown layer type:', e.layerType);
             }
-
-            // Optional: Remove the drawn shape after a delay (uncomment if you want this behavior)
-            // setTimeout(() => {
-            //     drawnItems.clearLayers();
-            // }, 3000); // Remove after 3 seconds
         };
 
-        // Optional: Clear drawn items when map is clicked (outside of drawing mode)
+        // Clear drawn items when map is clicked (outside of drawing mode)
         const onMapClick = () => {
             if (!map.pm || !map.pm.globalDrawModeEnabled()) {
                 drawnItems.clearLayers();
@@ -100,12 +95,12 @@ const DrawControl: React.FC<DrawControlProps> = ({ onDrawComplete }) => {
         };
 
         map.on(L.Draw.Event.CREATED, onDrawCreated);
-        // Uncomment the next line if you want to clear selection on map click
+        // clear selection on map click
         // map.on('click', onMapClick);
 
         return () => {
             map.off(L.Draw.Event.CREATED, onDrawCreated);
-            // map.off('click', onMapClick); // Uncomment if you added the click listener
+            // map.off('click', onMapClick); // add the click listener
             map.removeControl(drawControl);
             map.removeLayer(drawnItems);
         };

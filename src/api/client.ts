@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { API_BASE_URL } from './config';
+import { API_BASE_URL } from '../utils/config';
 
 export async function fetchIndexData(indexName: string, base: string, lead: number) {
     const response = await axios.get(`${API_BASE_URL}/api/${indexName}`, {

@@ -1,4 +1,4 @@
-import { API_BASE_URL, INITIAL_MAP_BOUNDS, INITIAL_MAP_CENTER, INITIAL_MAP_ZOOM } from '../api/config';
+import { API_BASE_URL, INITIAL_MAP_BOUNDS, INITIAL_MAP_CENTER, INITIAL_MAP_ZOOM } from '../utils/config';
 import React, { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, useMap } from 'react-leaflet';
 import { CRS, LatLngBounds } from "leaflet";
