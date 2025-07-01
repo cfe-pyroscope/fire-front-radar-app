@@ -1,0 +1,11 @@
+/* Polygon vertex markers (the editing handles) */
+.leaflet-editing-icon {
+    width: 8px;
+    height: 8px;
+    margin-left: -4px;
+    margin-top: -4px;
+    border-radius: 50%;
+    border: 2px solid #96C1FC;
+    background-color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
