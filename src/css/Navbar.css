@@ -12,3 +12,15 @@
 .navbar {
   background-color: var(--color-random3) !important
 }
+
+.noStyleButton {
+  all: unset;
+  display: inline;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+}

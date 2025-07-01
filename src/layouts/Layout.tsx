@@ -1,13 +1,16 @@
 import { Outlet } from 'react-router-dom';
-import Navbar from '../components/Navbar';
+import { Sidenav } from '../components/Sidenav';
 
 export default function Layout() {
   return (
     <>
-      <Navbar />
-      <main style={{maxHeight: '94vh' , overflow: 'hidden'}}>
-        <Outlet />
-      </main>
+      <div style={{ display: 'flex', minHeight: '100vh' }}>
+        <Sidenav />
+
+        <main style={{ flexGrow: 1, }}>
+          <Outlet />
+        </main>
+      </div>
     </>
   );
 }
