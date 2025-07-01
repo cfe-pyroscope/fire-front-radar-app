@@ -1,6 +1,7 @@
 import React from "react";
 import { SegmentedControl } from "@mantine/core";
 import "../css/IndexToggle.css";
+import IndexInfoPopover from "./IndexInfoPopover";
 
 interface IndexToggleProps {
     currentIndex: "fopi" | "pof";
@@ -10,6 +11,10 @@ interface IndexToggleProps {
 const IndexToggle: React.FC<IndexToggleProps> = ({ currentIndex, onToggle }) => {
     return (
         <div className="index-toggle-container">
+            <div className="index-info-button">
+                <IndexInfoPopover />
+            </div>
+
             <SegmentedControl
                 value={currentIndex}
                 onChange={(value: "fopi" | "pof") => onToggle(value)}
