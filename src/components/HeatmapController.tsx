@@ -84,6 +84,7 @@ const HeatmapController: React.FC<HeatmapControllerProps> = ({
                 setError(err.message || "Failed to load data for this date");
             } finally {
                 setLoading(false);
+                onHeatmapLoadingChange?.(false); // ensure loader is stopped in Home.tsx
             }
         };
 
