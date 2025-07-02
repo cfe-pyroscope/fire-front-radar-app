@@ -45,8 +45,7 @@ const IndexInfoPopover: React.FC = () => {
                 </Popover.Target>
                 <Popover.Dropdown>
                     <Text size="xs">
-                        <strong>POF</strong>: Probability of Fire — statistical likelihood of fire based on data.<br />
-                        <strong>FOPI</strong>: Fire Occurrence Prediction Index — predicts fire risk based on conditions.
+                        <strong>POF</strong>: Probability of Fire — The likelihood that at least one active fire will be detected within a 9 km grid, based on 17 variables (including weather, soil, vegetation, etc.). Expressed as a value between 0 and 1, representing the observed probability as determined by a machine learning model.<br /><br /><strong>FOPI</strong>: Fire Occurrence Prediction Index — The probability of fire ignition, based on the availability of fuel (biomass) and weather conditions. Expressed as a value between 0 and 1, interpreted as the likelihood of ignition under similar past conditions.
                     </Text>
                 </Popover.Dropdown>
             </Popover>
