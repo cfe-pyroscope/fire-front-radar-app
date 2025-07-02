@@ -40,3 +40,15 @@
     font-weight: 800 !important;
     color: #183449 !important;
 }
+
+
+
+@media (max-width: 768px) {
+    .logo_cnt {
+        width: 100% !important;
+        position: fixed !important;
+        top: 0 !important;
+        right: 0 !important;
+        border-radius: 0 !important;
+    }
+}

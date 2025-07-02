@@ -58,7 +58,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, availableDates
                 placeholder="Pick date"
                 label="Pick date"
                 required
-                maxDate={new Date()}
+                // maxDate={new Date()}
                 clearable={false}
                 dropdownType="popover"
                 popoverProps={{ position: 'bottom-end', withinPortal: true }}
