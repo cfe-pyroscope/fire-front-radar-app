@@ -1,7 +1,13 @@
 .leaflet-control-geosearch {
-    position: absolute !important;
-    top: 0 !important;
-    left: 0px !important;
-    right: auto !important;
+    position: absolute;
+    top: 0;
+    left: 0px;
+    right: auto;
     z-index: 1000;
+}
+
+@media (max-width: 768px) {
+    .leaflet-control-geosearch {
+        top: 50px;
+    }
 }

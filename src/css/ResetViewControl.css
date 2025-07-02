@@ -32,3 +32,9 @@
 .leaflet-reset-button:active:not(.disabled) {
     background-color: #e8e8e8;
 }
+
+@media (max-width: 768px) {
+    .leaflet-reset-button {
+        top: 250px;
+    }
+}
