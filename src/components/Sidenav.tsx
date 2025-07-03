@@ -1,14 +1,11 @@
 import { useState } from 'react';
 import {
-  IconCalendarStats,
-  IconDeviceDesktopAnalytics,
-  IconFingerprint,
-  IconGauge,
   IconHome2,
-  IconLogout,
-  IconSettings,
-  IconSwitchHorizontal,
-  IconUser,
+  IconCalendar,
+  IconCheckupList,
+  IconHome,
+  IconCar,
+  IconAlertSquareRounded
 } from '@tabler/icons-react';
 import { Center, Stack, Tooltip, UnstyledButton } from '@mantine/core';
 import classes from '../css/NavbarMinimal.module.css';
@@ -35,8 +32,9 @@ function NavbarLink({
         onClick={onClick}
         className={sidenavIsOpen ? classes.link2 : classes.link}
         data-active={active || undefined}
+        style={{paddingLeft: '10px'}}
       >
-        <div style={{ display: 'flex', alignItems: 'center', padding: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', width: 'auto' }}>
           <Icon size={20} stroke={1.5} />
           {sidenavIsOpen && <p style={{ marginLeft: '1rem' }}>{label}</p>}
         </div>
@@ -46,13 +44,12 @@ function NavbarLink({
 }
 
 const mockdata = [
-  { icon: IconHome2, label: 'Home' },
-  { icon: IconGauge, label: 'Dashboard' },
-  { icon: IconDeviceDesktopAnalytics, label: 'Analytics' },
-  { icon: IconCalendarStats, label: 'Releases' },
-  { icon: IconUser, label: 'Account' },
-  { icon: IconFingerprint, label: 'Security' },
-  { icon: IconSettings, label: 'Settings' },
+  { icon: IconCheckupList, label: 'Assess fire risk for preparedness' },
+  { icon: IconCalendar, label: "What's my fire risk today?" },
+  { icon: IconHome, label: 'Track fire risk over my property' },
+  { icon: IconCar, label: 'Plan a safe trip' },
+    { icon: IconAlertSquareRounded, label: 'Alert extreme risk' },
+
 ];
 
 const mockdata2 = [
@@ -89,53 +86,53 @@ export const Sidenav = () => {
 
   return (
     <>
-    <div
-      style={{
-        width: sidenavIsOpen ? '340px' : '120px',
-        transition: 'width 0.4s ease',
-        overflow: 'hidden',
-        whiteSpace: 'nowrap',
-        backgroundColor: '#f8f9fa',
-        borderRight: '1px solid #ccc',
-        padding: '1rem',
-        display: 'flex',
-        flexDirection: 'column',
+      <div
+        style={{
+          width: sidenavIsOpen ? '340px' : '120px',
+          transition: 'width 0.4s ease',
+          overflow: 'hidden',
+          whiteSpace: 'nowrap',
+          backgroundColor: '#f8f9fa',
+          borderRight: '1px solid #ccc',
+          padding: '1rem',
+          display: 'flex',
+          flexDirection: 'column',
 
-        alignItems: 'center',
-        height: '100vh',
-        boxSizing: 'border-box',
-      }}
-    >
-      <div style={{ border: 'solid green 1px', width: '100%', height: '80vh', overflow: 'scroll' }}>
-        <nav className={classes.navbar}>
-          <button
-            onClick={toggleSidenav}
-            style={{ textAlign: 'center' }}
-            title={
-              sidenavIsOpen
-                ? 'Minimise navigation bar'
-                : 'Maximise navigation bar'
-            }
-            className={
-              sidenavIsOpen ? 'noStyleButton ms-5' : 'noStyleButton ms-3'
-            }
-          >
-            <i
-              className={
+          alignItems: 'center',
+          height: '100vh',
+          boxSizing: 'border-box',
+        }}
+      >
+        <div style={{ width: '100%', height: '80vh' }}>
+          <nav className={classes.navbar}>
+            <button
+              onClick={toggleSidenav}
+              style={{ textAlign: 'center' }}
+              title={
                 sidenavIsOpen
-                  ? 'fa-solid fa-chevron-left'
-                  : 'fa-solid fa-chevron-right'
+                  ? 'Minimise navigation bar'
+                  : 'Maximise navigation bar'
               }
-            ></i>
-          </button>
+              className={
+                sidenavIsOpen ? 'noStyleButton ms-5' : 'noStyleButton ms-3'
+              }
+            >
+              <i
+                className={
+                  sidenavIsOpen
+                    ? 'fa-solid fa-chevron-left'
+                    : 'fa-solid fa-chevron-right'
+                }
+              ></i>
+            </button>
 
-          <div className={classes.navbarMain}>
-            <Stack justify="center" gap={0}>
-              {links}
-            </Stack>
-          </div>
+            <div className={classes.navbarMain}>
+              <Stack justify="center" gap={0}>
+                {links}
+              </Stack>
+            </div>
 
-          {/* <Stack
+            {/* <Stack
             justify="center"
             gap={0}
             style={{ position: 'fixed', bottom: '0' }}
@@ -143,9 +140,23 @@ export const Sidenav = () => {
             <NavbarLink icon={IconSwitchHorizontal} label="Change account" />
             <NavbarLink icon={IconLogout} label="Logout" />
           </Stack> */}
-        </nav>
+          </nav>
+        </div>
+        <div
+          style={{
+            height: '15vh',
+            width: '100%',
+            wordWrap: 'break-word',
+            whiteSpace: 'normal',
+          }}
+        >
+          {/* <p>
+            Marina I thought we could put some of the permanent map
+            functionality here? Equally it might be better on the map, we can
+            play around with the space.{' '}
+          </p> */}
+        </div>
       </div>
-      <div style={{ border: 'solid red 1px', height: '15vh', width: '100%', wordWrap: 'break-word',  whiteSpace: 'normal'  }}><p>Marina I thought we could put some of the permanent map functionality here?  Equally it might be better on the map, we can play around with the space. </p></div>
-    </div></>
+    </>
   );
 };

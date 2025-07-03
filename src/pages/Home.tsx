@@ -32,6 +32,8 @@ const Home: React.FC = () => {
   const [drawnBounds, setDrawnBounds] = useState<LatLngBounds | null>(null);
   const [isHeatmapLoading, setIsHeatmapLoading] = useState(false);
 
+  console.log(availableDates)
+
   console.log(
     'Home component render - selectedDate:',
     selectedDate,

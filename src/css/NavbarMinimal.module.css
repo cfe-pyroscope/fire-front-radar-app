@@ -11,15 +11,20 @@
 .navbarMain {
   flex: 1;
   margin-top: 50px;
+  text-align: left;
 }
 
 .link2 {
-  width: 140px;
+  width: auto;
   height: 50px;
   border-radius: var(--mantine-radius-md);
   display: flex;
   align-items: center;
-  justify-content: center;
+  word-wrap: 'break-word';
+  white-space: 'normal';
+  padding-left: 10px;
+  //justify-content: center;
+  //border: solid red 1px !important;
   color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-0));
 
   &:hover {
@@ -44,7 +49,9 @@
   border-radius: var(--mantine-radius-md);
   display: flex;
   align-items: center;
-  justify-content: center;
+   padding-left: 10px;
+  //justify-content: center;
+  //border: solid red 1px !important;
   color: light-dark(var(--mantine-color-gray-7), var(--mantine-color-dark-0));
 
   &:hover {
