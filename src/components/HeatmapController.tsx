@@ -121,7 +121,7 @@ const HeatmapController: React.FC<HeatmapControllerProps> = ({
                 <>
                     {console.log("🎨 Rendering ColorBarLegend with scale:", scale)}
                     <div className="colorbar-container">
-                        <ColorBarLegend vmin={scale.vmin} vmax={scale.vmax} />
+                        <ColorBarLegend vmin={scale.vmin} vmax={scale.vmax} index={indexName} />
                     </div>
                 </>
             )}
