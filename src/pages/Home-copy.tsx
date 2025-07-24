@@ -8,12 +8,9 @@ import 'leaflet-draw';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import '../css/Home.css';
 import ByModeToggle from '../components/ByModeToggle';
-import ColorBarLegend from '../components/ColorBarLegend';
 import DatePicker from '../components/DatePicker';
 import DrawControl from '../components/DrawControl';
 import DownloadButton from '../components/DownloadButton';
-import ForecastSelect from '../components/ForecastSelect';
-import ForecastSlider from '../components/ForecastSlider';
 import HeatmapController from '../components/HeatmapController';
 import IndexToggle from '../components/IndexToggle';
 import Loader from '../components/Loader';
@@ -24,11 +21,6 @@ import ResetViewControl from '../components/ResetViewControl';
 import logo1 from '../assets/FFR-logo.svg';
 import logo2 from '../assets/ECMWF-logo-white.png';
 
-interface ForecastStep {
-    time: string;
-    lead_hours: number;
-}
-
 const Home: React.FC = () => {
     const [indexName, setIndexName] = useState<'pof' | 'fopi'>('pof');
     const [availableDates, setAvailableDates] = useState<Date[] | null>(null);
@@ -36,50 +28,8 @@ const Home: React.FC = () => {
     const [drawnBounds, setDrawnBounds] = useState<LatLngBounds | null>(null);
     const [isHeatmapLoading, setIsHeatmapLoading] = useState(false);
     const [mode, setMode] = useState<"by_date" | "by_forecast">("by_date");
-    const [forecastSteps, setForecastSteps] = useState<ForecastStep[]>([]);
-    const [selectedLeadHours, setSelectedLeadHours] = useState<number | null>(null);
-    const [baseTime, setBaseTime] = useState<string | null>(null);
-    const [scale, setScale] = useState<{ vmin: number; vmax: number } | null>(null);
-    const [metaError, setMetaError] = useState<string | null>(null);
-    const [metaLoading, setMetaLoading] = useState<boolean>(false);
 
     console.log('Home component render - selectedDate:', selectedDate, 'isValid:', selectedDate instanceof Date && !isNaN(selectedDate.getTime()));
-
-    useEffect(() => {
-        if (!selectedDate) return;
-        setMetaLoading(true);
-        setMetaError(null);
-
-        const fetchMetadata = async () => {
-            try {
-                const baseIso = selectedDate.toISOString();
-                let url = "";
-                if (mode === "by_forecast") {
-                    url = `${API_BASE_URL}/api/${indexName}/forecast?forecast_init=${baseIso}`;
-                } else {
-                    url = `${API_BASE_URL}/api/${indexName}?base_time=${baseIso}&lead_hours=0`;
-                }
-                const res = await fetch(url);
-                if (!res.ok) {
-                    const msg = await res.text();
-                    throw new Error(`Metadata API error ${res.status}: ${msg}`);
-                }
-                const data = await res.json();
-                if (!data.forecast_steps || !Array.isArray(data.forecast_steps) || data.forecast_steps.length === 0) {
-                    throw new Error("No forecast steps available for this date.");
-                }
-                setForecastSteps(data.forecast_steps);
-                setSelectedLeadHours(data.forecast_steps[0].lead_hours);
-                setBaseTime(baseIso);
-                setMetaError(null);
-            } catch (err: any) {
-                setMetaError(err.message || "Failed to load data for this date");
-            } finally {
-                setMetaLoading(false);
-            }
-        };
-        fetchMetadata();
-    }, [indexName, selectedDate, mode]);
 
 
     useEffect(() => {
@@ -145,9 +95,6 @@ const Home: React.FC = () => {
         return dates.some(d => d.toDateString() === date.toDateString());
     };
 
-    const showControls = !metaLoading && !metaError && forecastSteps.length > 0 && selectedLeadHours !== null && baseTime;
-
-
     return (
         <>
             <LogoContainer
@@ -180,32 +127,6 @@ const Home: React.FC = () => {
                     <Loader message="Loading forecast..." />
                 )}
 
-                {metaLoading && <Loader message="Loading forecast metadata..." />}
-                {metaError && <div className="forecast-error">⚠️ {metaError}</div>}
-
-                {showControls && (
-                    <div className="forecast-controls">
-                        {mode === "by_date" ? (
-                            <ForecastSelect
-                                forecastSteps={forecastSteps}
-                                selectedLeadHours={selectedLeadHours}
-                                onChange={setSelectedLeadHours}
-                            />
-                        ) : (
-                            <ForecastSlider
-                                forecastSteps={forecastSteps}
-                                selectedLeadHours={selectedLeadHours}
-                                onChange={setSelectedLeadHours}
-                            />
-                        )}
-                        {scale && (
-                            <div className="colorbar-container">
-                                <ColorBarLegend vmin={scale.vmin} vmax={scale.vmax} index={indexName} />
-                            </div>
-                        )}
-                    </div>
-                )}
-
                 <MapContainer
                     center={INITIAL_MAP_CENTER}
                     zoom={INITIAL_MAP_ZOOM}
@@ -231,16 +152,19 @@ const Home: React.FC = () => {
                         noWrap={true}
                     />
 
-                    {showControls && (
+                    {isDateInAvailableDates(selectedDate, availableDates) ? (
                         <HeatmapController
+                            key={`${indexName}-${selectedDate.toISOString()}-${mode}`}
                             indexName={indexName}
-                            baseTime={baseTime!}
-                            selectedLeadHours={selectedLeadHours!}
-                            forecastSteps={forecastSteps}
+                            selectedDate={selectedDate}
                             mode={mode}
+                            drawnBounds={drawnBounds}
                             onHeatmapLoadingChange={setIsHeatmapLoading}
-                            onScaleChange={setScale}
                         />
+                    ) : (
+                        <div className="forecast-error">
+                            ⚠️ No data available for {selectedDate.toDateString()} in index "{indexName}". Please choose a different date.
+                        </div>
                     )}
 
                     <TileLayer
