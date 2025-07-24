@@ -93,14 +93,19 @@ export const Sidenav = () => {
         style={{
           width: sidenavIsOpen ? '340px' : '70px',
           backgroundColor: sidenavIsOpen ? '#fff' : 'transparent',
+          top: sidenavIsOpen ? '0' : '10px',
         }}
       >
         <div className="navbar_inner_cnt"
           style={{
             boxShadow: sidenavIsOpen ? 'none' : '0 2px 6px rgba(0, 0, 0, 0.2)',
+            width: sidenavIsOpen ? '100%' : '45px',
           }}
         >
-          <nav className={classes.navbar}>
+          <nav className={classes.navbar}
+            style={{
+              paddingTop: sidenavIsOpen ? '20px' : '10px',
+            }}>
             <button
               onClick={toggleSidenav}
               style={{ textAlign: 'center' }}

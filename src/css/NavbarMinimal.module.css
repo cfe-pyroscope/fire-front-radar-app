@@ -1,9 +1,9 @@
 .navbar {
   width: auto;
-  height: 750px;
-  padding: var(--mantine-spacing-md);
+  height: auto;
   display: flex;
   flex-direction: column;
+  align-items: center;
 }
 
 .navbarMain {
