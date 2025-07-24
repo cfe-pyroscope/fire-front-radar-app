@@ -12,7 +12,7 @@ import {
 } from '@tabler/icons-react';
 import { Center, Stack, Tooltip, UnstyledButton } from '@mantine/core';
 import classes from '../css/NavbarMinimal.module.css';
-import '../css/Navbar.css';
+import '../css/Sidenav.css';
 import { BadgeCard } from './BadgeCard';
 
 interface NavbarLinkProps {
@@ -89,53 +89,42 @@ export const Sidenav = () => {
 
   return (
     <>
-    <div
-      style={{
-        width: sidenavIsOpen ? '340px' : '120px',
-        transition: 'width 0.4s ease',
-        overflow: 'hidden',
-        whiteSpace: 'nowrap',
-        backgroundColor: '#f8f9fa',
-        borderRight: '1px solid #ccc',
-        padding: '1rem',
-        display: 'flex',
-        flexDirection: 'column',
-
-        alignItems: 'center',
-        height: '100vh',
-        boxSizing: 'border-box',
-      }}
-    >
-      <div style={{ border: 'solid green 1px', width: '100%', height: '80vh', overflow: 'scroll' }}>
-        <nav className={classes.navbar}>
-          <button
-            onClick={toggleSidenav}
-            style={{ textAlign: 'center' }}
-            title={
-              sidenavIsOpen
-                ? 'Minimise navigation bar'
-                : 'Maximise navigation bar'
-            }
-            className={
-              sidenavIsOpen ? 'noStyleButton ms-5' : 'noStyleButton ms-3'
-            }
-          >
-            <i
-              className={
+      <div className="navbar_cnt"
+        style={{
+          width: sidenavIsOpen ? '340px' : '70px',
+          backgroundColor: sidenavIsOpen ? '#fff' : 'transparent',
+        }}
+      >
+        <div className="navbar_inner_cnt">
+          <nav className={classes.navbar}>
+            <button
+              onClick={toggleSidenav}
+              style={{ textAlign: 'center' }}
+              title={
                 sidenavIsOpen
-                  ? 'fa-solid fa-chevron-left'
-                  : 'fa-solid fa-chevron-right'
+                  ? 'Minimise navigation bar'
+                  : 'Maximise navigation bar'
               }
-            ></i>
-          </button>
+              className={
+                sidenavIsOpen ? 'noStyleButton ms-5' : 'noStyleButton ms-3'
+              }
+            >
+              <i
+                className={
+                  sidenavIsOpen
+                    ? 'fa-solid fa-chevron-left'
+                    : 'fa-solid fa-chevron-right'
+                }
+              ></i>
+            </button>
 
-          <div className={classes.navbarMain}>
-            <Stack justify="center" gap={0}>
-              {links}
-            </Stack>
-          </div>
+            <div className={classes.navbarMain}>
+              <Stack justify="center" gap={0}>
+                {links}
+              </Stack>
+            </div>
 
-          {/* <Stack
+            {/* <Stack
             justify="center"
             gap={0}
             style={{ position: 'fixed', bottom: '0' }}
@@ -143,9 +132,8 @@ export const Sidenav = () => {
             <NavbarLink icon={IconSwitchHorizontal} label="Change account" />
             <NavbarLink icon={IconLogout} label="Logout" />
           </Stack> */}
-        </nav>
-      </div>
-      <div style={{ border: 'solid red 1px', height: '15vh', width: '100%', wordWrap: 'break-word',  whiteSpace: 'normal'  }}><p>Marina I thought we could put some of the permanent map functionality here?  Equally it might be better on the map, we can play around with the space. </p></div>
-    </div></>
+          </nav>
+        </div>
+      </div></>
   );
 };

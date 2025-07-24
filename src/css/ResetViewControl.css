@@ -1,6 +1,7 @@
 .leaflet-reset-button {
     position: absolute;
     top: 200px;
+    left: 70px;
     z-index: 1000;
     width: 33px;
     height: 33px;
