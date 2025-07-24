@@ -7,6 +7,8 @@ interface HeatmapOverlayProps {
     indexName: string;
     base: string;
     lead: number;
+    step?: number;
+    mode: "by_date" | "by_forecast";
     onLoadingChange?: (loading: boolean) => void;
     onScaleChange?: (scale: { vmin: number; vmax: number } | null) => void;
 }
@@ -15,6 +17,8 @@ const HeatmapOverlay: React.FC<HeatmapOverlayProps> = ({
     indexName,
     base,
     lead,
+    mode,
+    step,
     onLoadingChange,
     onScaleChange,
 }) => {
@@ -69,10 +73,19 @@ const HeatmapOverlay: React.FC<HeatmapOverlayProps> = ({
                 const ne3857 = CRS.EPSG3857.project(mapBounds.getNorthEast());
                 const bbox = [sw3857.x, sw3857.y, ne3857.x, ne3857.y].join(",");
 
-                const url =
-                    `${API_BASE_URL}/api/${indexName}/heatmap/image` +
-                    `?base_time=${new Date(base).toISOString()}&lead_hours=${lead}&bbox=${bbox}`;
+                let url = "";
 
+                if (mode === "by_forecast" && step !== undefined && step !== null) {
+                    // Forecast-init endpoint
+                    url =
+                        `${API_BASE_URL}/api/${indexName}/forecast/heatmap/image` +
+                        `?forecast_init=${new Date(base).toISOString()}&step=${step}&bbox=${bbox}`;
+                } else {
+                    // Date-based endpoint (default)
+                    url =
+                        `${API_BASE_URL}/api/${indexName}/heatmap/image` +
+                        `?base_time=${new Date(base).toISOString()}&lead_hours=${lead}&bbox=${bbox}`;
+                }
 
                 console.log('Fetching heatmap from:', url);
 

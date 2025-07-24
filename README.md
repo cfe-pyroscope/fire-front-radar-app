@@ -1,93 +1,52 @@
 # React + TypeScript + Vite
 
+Interactive dashboard using React, TypeScript, and Leaflet to visualize global fire probability data on a map.
+
+The frontend communicates with a FastAPI backend, which serves data extracted from daily netCDF files—one file for the Fire Occurrence Prediction Index (FOPI) and another for the Probability of Fire (POF) index.
+
+The POF index provides daily fire probability forecasts for the next 10 days (i.e., one forecast per day, spanning 10 days ahead).
+
+The FOPI index offers higher temporal resolution, providing 3-hourly forecasts (eight time steps per day) for the next 10 days.
+
+Users can interactively explore and analyze both indices, choosing between date-based and forecast-initialization-based views, and seamlessly visualize the evolving probability of fire events worldwide.
+
 ## 📁 Frontend structure
 
 src/  
 ├── api/  
-│   ├── client.ts               # HTTP client setup (e.g. fetch wrapper or axios instance)      
+│   ├── client.ts                     # HTTP client setup (e.g. fetch wrapper or axios instance)      
 │  
-├── assets/                     # images   
-|  
+├── assets/                           # images   
+│  
 ├── components/  
-│   ├── ColorBarLegend.tsx      # Dynamic color legend based on selected area   
-│   ├── DatePickerComponent.tsx # Mantine DatePickerInput; allows user to pick a date, updates app state  
-│   ├── DrawControl.tsx         # Drawing tools; allow user to select an area on the map  
-│   ├── DownloadButton.tsx      # Download button; allows user to download the heatmap image  
-│   ├── ForecastSelect.tsx      # Mantine ForecastSelect; allows user to pick a forecast relate to a date    
-│   ├── HeatmapController.tsx   # Fetches metadata & forecast steps; passes props to HeatmapOverlay    
-│   ├── HeatmapOverlay.tsx      # Renders Leaflet ImageOverlay for fire data from NetCDF backend   
-│   └── IndexInfoPopover.tsx    # Mantine popover to explain the relative index
-│   └── IndexToggle.tsx         # Mantine SegmentedControl to toggle between "fopi" and "pof" indexes   
-│   └── Loader.tsx              # Mantine Loader while data and heatmap are loaded   
-│   └── Logo.tsx                # App and ECMWF logos   
-│   └── MapLabels.tsx           # To have map labels over the heatmap image   
+│   ├── ByModeInfoPopover.tsx         # Info tooltip explaining the "by date"/"by forecast" toggle  
+│   ├── ByModeToggle.tsx              # Mantine SegmentedControl to toggle between "by date" and "by forecast" modes  
+│   ├── ColorBarLegend.tsx            # Dynamic color legend based on selected area   
+│   ├── DatePicker.tsx                # Mantine DatePickerInput; allows user to pick a date or forecast initialization time  
+│   ├── DownloadButton.tsx            # Download button; allows user to download the heatmap image   
+│   ├── DrawControl.tsx               # Drawing tools; allow user to select an area on the map  
+│   ├── ForecastSelect.tsx            # Mantine Select; lets user pick a forecast valid time (in "by date" mode)    
+│   ├── ForecastSlider.tsx            # Mantine Slider; lets user slide between forecast steps (in "by forecast" mode), shows start/end dates below slider  
+│   ├── HeatmapController.tsx         # Fetches metadata & forecast steps; renders select/slider based on mode and passes props to HeatmapOverlay    
+│   ├── HeatmapOverlay.tsx            # Renders Leaflet ImageOverlay for fire data from NetCDF backend
+│   ├── IndexInfoPopover.tsx          # Info tooltip containing explanations about "fopi" and "pof" indexes    
+│   ├── IndexToggle.tsx               # Mantine SegmentedControl to toggle between "fopi" and "pof" indexes     
+│   ├── Loader.tsx                    # Mantine Loader while data and heatmap are loaded   
+│   ├── LocationSearch.tsx            # Leaflet search input by location  
+│   ├── LogoContainer.tsx             # App and ECMWF logos   
+│   ├── MapLabels.tsx                 # To have map labels over the heatmap image   
+│   └── ResetViewControl.tsx          # Reset the map at the initial zoom and position   
 │  
 ├── pages/  
-│   └── Home.tsx                # Main map dashboard; combines map, toggle, date picker, and controller  
+│   └── Home.tsx                      # Main map dashboard; combines map, toggles, date picker, forecast controller, etc.  
 │  
 ├── routes/  
-│   └── Router.tsx              # React Router setup; maps routes to components/pages  
+│   └── Router.tsx                    # React Router setup; maps routes to components/pages  
 │  
 ├── utils/  
-│   └── config.ts               # Base API URL and environment config  
+│   └── config.ts                     # Base API URL and environment config  
 │   
-├── App.tsx                     # Root component, wraps app layout; could be minimal if Router is main handler  
-├── main.tsx                    # Entry point; ReactDOM render, wraps app with MantineProvider and Router  
-
-
-
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+├── App.tsx                           # Root component, wraps app layout; could be minimal if Router is main handler  
+├── main.tsx                          # Entry point; ReactDOM render, wraps app with MantineProvider and Router  
 
 

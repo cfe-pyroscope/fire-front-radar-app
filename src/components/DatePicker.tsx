@@ -7,9 +7,10 @@ interface DatePickerProps {
     value: Date;
     onChange: (value: Date) => void;
     availableDates?: Date[];
+    mode?: string;
 }
 
-const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, availableDates }) => {
+const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, availableDates, mode }) => {
     return (
         <div className="datepicker-container">
             <DatePickerInput
@@ -56,7 +57,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, availableDates
                     }
                 }}
                 placeholder="Pick date"
-                label="Pick date"
+                label={mode || "Pick date"}
                 required
                 // maxDate={new Date()}
                 clearable={false}
