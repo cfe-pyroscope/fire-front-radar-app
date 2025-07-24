@@ -219,8 +219,8 @@ const Home: React.FC = () => {
                 >
 
                     <LocationSearch />
-                    <DrawControl onDrawComplete={setDrawnBounds} />
                     <ResetViewControl />
+                    <DrawControl onDrawComplete={setDrawnBounds} />
                     <DownloadButton />
 
                     <MapLabels />
