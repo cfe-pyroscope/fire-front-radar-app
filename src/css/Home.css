@@ -16,8 +16,15 @@
 }
 
 .leaflet-draw.leaflet-control {
-    top: 50px;
+    top: 100px;
     left: 70px;
+}
+
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    border: none;
+    background-clip: padding-box;
 }
 
 @media (max-width: 768px) {

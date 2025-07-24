@@ -95,7 +95,11 @@ export const Sidenav = () => {
           backgroundColor: sidenavIsOpen ? '#fff' : 'transparent',
         }}
       >
-        <div className="navbar_inner_cnt">
+        <div className="navbar_inner_cnt"
+          style={{
+            boxShadow: sidenavIsOpen ? 'none' : '0 2px 6px rgba(0, 0, 0, 0.2)',
+          }}
+        >
           <nav className={classes.navbar}>
             <button
               onClick={toggleSidenav}
