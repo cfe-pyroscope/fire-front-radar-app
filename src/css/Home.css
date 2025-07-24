@@ -1,6 +1,6 @@
 .map-container {
     height: 100vh;
-   
+
     position: relative;
 }
 
@@ -12,10 +12,12 @@
 
 .leaflet-control-zoom {
     top: 40px;
+    left: 70px;
 }
 
 .leaflet-draw.leaflet-control {
     top: 50px;
+    left: 70px;
 }
 
 @media (max-width: 768px) {
