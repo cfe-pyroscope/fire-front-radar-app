@@ -176,11 +176,11 @@ const Home: React.FC = () => {
                     label={mode === "by_forecast" ? "Pick forecast" : "Pick date"}
                 />
 
-                {isHeatmapLoading && isDateInAvailableDates(selectedDate, availableDates) && (
-                    <Loader message="Loading forecast..." />
+                {isHeatmapLoading && (
+                    <Loader message="Loading data..." />
                 )}
 
-                {metaLoading && <Loader message="Loading forecast metadata..." />}
+                {metaLoading && <Loader message="Loading metadata..." />}
                 {metaError && <div className="forecast-error">⚠️ {metaError}</div>}
 
                 {showControls && (
