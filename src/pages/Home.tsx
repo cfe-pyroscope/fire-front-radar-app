@@ -57,7 +57,7 @@ const Home: React.FC = () => {
                 if (mode === "by_forecast") {
                     url = `${API_BASE_URL}/api/${indexName}/forecast?forecast_init=${baseIso}`;
                 } else {
-                    url = `${API_BASE_URL}/api/metadata/${indexName}?base_time=${baseIso}&lead_hours=0`;
+                    url = `${API_BASE_URL}/api/${indexName}/metadata?base_time=${baseIso}&lead_hours=0`;
                 }
                 const res = await fetch(url);
                 if (!res.ok) {
@@ -85,7 +85,7 @@ const Home: React.FC = () => {
     useEffect(() => {
         const fetchAvailableDates = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/api/available_dates?index=${indexName}`);
+                const res = await fetch(`${API_BASE_URL}/api/${indexName}/available_dates`);
                 if (!res.ok) throw new Error("Failed to fetch available dates");
                 const data = await res.json();
                 const parsedDates = data.available_dates.map((d: string) =>
@@ -110,7 +110,7 @@ const Home: React.FC = () => {
             try {
                 console.log("🧪 Using API_BASE_URL:", API_BASE_URL);
                 console.log('Fetching latest date...');
-                const res = await fetch(`${API_BASE_URL}/api/latest_date`);
+                const res = await fetch(`${API_BASE_URL}/api/${indexName}/latest_date`);
                 console.log('Response status:', res.status);
                 if (!res.ok) throw new Error('Failed to fetch latest date');
                 const data = await res.json();
@@ -133,7 +133,7 @@ const Home: React.FC = () => {
         };
 
         fetchLatestDate();
-    }, []);
+    }, [indexName]);
 
 
     if (!selectedDate) {
