@@ -3,25 +3,23 @@ import { Slider, Text } from "@mantine/core";
 import "../css/ForecastSlider.css";
 
 interface ForecastStep {
-    time: string;
-    lead_hours: number;
-    base_time: string;
+    forecast_time: string; // ISO
+    base_time: string;     // ISO
 }
 
 interface ForecastSliderProps {
     forecastSteps: ForecastStep[];
     selectedBaseTime: string | null;
-    selectedLeadHours: number | null;
-    onChange: (baseTime: string) => void;
+    selectedForecastTime: string | null;       // ← changed
+    onChange: (baseTime: string) => void;      // slider still chooses base_time
 }
 
 const ForecastSlider: React.FC<ForecastSliderProps> = ({
     forecastSteps,
     selectedBaseTime,
-    selectedLeadHours,
+    selectedForecastTime,
     onChange,
 }) => {
-    // Early exit if no data
     if (forecastSteps.length === 0) {
         return <Text color="red">No forecast steps available</Text>;
     }
@@ -35,10 +33,11 @@ const ForecastSlider: React.FC<ForecastSliderProps> = ({
         [forecastSteps]
     );
 
-    // Extract unique base_times
-    const uniqueBaseTimes = useMemo(() => {
-        return Array.from(new Set(sortedForecastSteps.map((s) => s.base_time)));
-    }, [sortedForecastSteps]);
+    // Unique base times
+    const uniqueBaseTimes = useMemo(
+        () => Array.from(new Set(sortedForecastSteps.map((s) => s.base_time))),
+        [sortedForecastSteps]
+    );
 
     // Determine base_time to use
     const effectiveSelectedBaseTime = useMemo(() => {
@@ -49,42 +48,32 @@ const ForecastSlider: React.FC<ForecastSliderProps> = ({
     }, [selectedBaseTime, uniqueBaseTimes]);
 
     useEffect(() => {
-        console.log("✅✅✅ Debug — SelectedStep Lookup:");
-        console.log("✅✅✅ effectiveSelectedBaseTime:", effectiveSelectedBaseTime);
-        console.log("✅✅✅ selectedLeadHours:", selectedLeadHours);
-        console.log("✅✅✅ sortedForecastSteps sample:", sortedForecastSteps.slice(0, 3));
-    }, [effectiveSelectedBaseTime, selectedLeadHours, sortedForecastSteps]);
-
-
-    // Set initial base_time if missing
-    useEffect(() => {
         if (!selectedBaseTime && uniqueBaseTimes.length > 0) {
             onChange(uniqueBaseTimes[0]);
         }
     }, [selectedBaseTime, uniqueBaseTimes, onChange]);
 
-    // Match selected forecast step
+    // Match selected forecast step using base_time + forecast_time
     const selectedStep = useMemo(() => {
-        // Try to find exact match
+        // Try exact match
         const exact = sortedForecastSteps.find(
             (s) =>
                 s.base_time === effectiveSelectedBaseTime &&
-                s.lead_hours === selectedLeadHours
+                s.forecast_time === selectedForecastTime
         );
         if (exact) return exact;
 
-        // Fallback to first match by base_time only
-        return sortedForecastSteps.find(
-            (s) => s.base_time === effectiveSelectedBaseTime
-        ) || null;
-    }, [sortedForecastSteps, effectiveSelectedBaseTime, selectedLeadHours]);
+        // Fallback to first with matching base_time
+        return (
+            sortedForecastSteps.find((s) => s.base_time === effectiveSelectedBaseTime) ||
+            null
+        );
+    }, [sortedForecastSteps, effectiveSelectedBaseTime, selectedForecastTime]);
 
-    // Current slider index
     const selectedIndex = uniqueBaseTimes.findIndex(
         (bt) => bt === effectiveSelectedBaseTime
     );
 
-    // Slider marks
     const marks = uniqueBaseTimes.map((bt, index) => {
         const date = new Date(bt);
         const isEdge = index === 0 || index === uniqueBaseTimes.length - 1;
@@ -113,7 +102,7 @@ const ForecastSlider: React.FC<ForecastSliderProps> = ({
             <Text size="sm" mb={4}>Forecast date and time:</Text>
             <Text size="sm" mb={8}>
                 {selectedStep
-                    ? new Date(selectedStep.time).toLocaleString(undefined, {
+                    ? new Date(selectedStep.forecast_time).toLocaleString(undefined, {
                         year: "numeric",
                         month: "short",
                         day: "numeric",
@@ -124,7 +113,6 @@ const ForecastSlider: React.FC<ForecastSliderProps> = ({
                     })
                     : "—"}
             </Text>
-
 
             <Slider
                 min={0}

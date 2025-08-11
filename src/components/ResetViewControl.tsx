@@ -52,7 +52,7 @@ const ResetViewControl = () => {
         map.on('movestart', enableButton);  // User starts dragging
         map.on('zoomstart', enableButton);  // User starts zooming
 
-        console.log("🔒 Reset button starts disabled");
+        console.log("Reset button starts disabled");
 
         return () => {
             map.removeControl(resetControl);
