@@ -1,8 +1,8 @@
-.leaflet-editing-icon {
-    width: 8px;
-    height: 8px;
-    margin-left: -4px;
-    margin-top: -4px;
+.leaflet-marker-icon {
+    width: 15px !important;
+    height: 15px !important;
+    margin-left: -6px !important;
+    margin-top: -6px !important;
     border-radius: 50%;
     border: 2px solid #96C1FC;
     background-color: #ffffff;

@@ -1,4 +1,4 @@
-.forecast-select-cnt {
+.forecast-select {
     position: absolute;
     top: 250px;
     right: 10px;
@@ -8,4 +8,8 @@
     border-radius: 4px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     font-size: 14px;
+}
+
+.forecast-select div:first-child {
+    margin-top: 0 !important;
 }
