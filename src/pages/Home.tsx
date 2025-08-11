@@ -27,7 +27,9 @@ import logo2 from '../assets/ECMWF-logo-white.png';
 interface ForecastStep {
     time: string;
     lead_hours: number;
+    base_time: string;
 }
+
 
 const Home: React.FC = () => {
     const [indexName, setIndexName] = useState<'pof' | 'fopi'>('pof');
@@ -55,9 +57,9 @@ const Home: React.FC = () => {
                 const baseIso = selectedDate.toISOString();
                 let url = "";
                 if (mode === "by_forecast") {
-                    url = `${API_BASE_URL}/api/${indexName}/forecast?forecast_init=${baseIso}`;
+                    url = `${API_BASE_URL}/api/${indexName}/by_forecast?forecast_init=${baseIso}`;
                 } else {
-                    url = `${API_BASE_URL}/api/${indexName}/metadata?base_time=${baseIso}&lead_hours=0`;
+                    url = `${API_BASE_URL}/api/${indexName}/by_date?base_time=${baseIso}&lead_hours=0`;
                 }
                 const res = await fetch(url);
                 if (!res.ok) {
@@ -69,6 +71,8 @@ const Home: React.FC = () => {
                     throw new Error("No forecast steps available for this date.");
                 }
                 setForecastSteps(data.forecast_steps);
+                console.log("❌❌❌ fetched forecastSteps", data.forecast_steps);
+
                 setSelectedLeadHours(data.forecast_steps[0].lead_hours);
                 setBaseTime(baseIso);
                 setMetaError(null);
@@ -136,6 +140,18 @@ const Home: React.FC = () => {
     }, [indexName]);
 
 
+    useEffect(() => {
+        if (baseTime && forecastSteps.length > 0) {
+            const validStep = forecastSteps.find(
+                (step) => step.base_time === baseTime
+            );
+            if (validStep && validStep.lead_hours !== selectedLeadHours) {
+                setSelectedLeadHours(validStep.lead_hours);
+            }
+        }
+    }, [baseTime, forecastSteps]);
+
+
     if (!selectedDate) {
         return <div>Loading map and data for latest date...</div>;
     }
@@ -194,9 +210,11 @@ const Home: React.FC = () => {
                         ) : (
                             <ForecastSlider
                                 forecastSteps={forecastSteps}
+                                selectedBaseTime={baseTime}
                                 selectedLeadHours={selectedLeadHours}
-                                onChange={setSelectedLeadHours}
+                                onChange={setBaseTime}
                             />
+
                         )}
                         {scale && (
                             <div className="colorbar-container">

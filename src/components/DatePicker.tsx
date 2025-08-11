@@ -21,7 +21,6 @@ const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, availableDates
                     const date = input instanceof Date ? input : new Date(input);
 
                     if (!availableDates || isNaN(date.getTime())) {
-                        // console.log("🛑 Skipping exclusion check due to invalid date:", input);
                         return false;
                     }
 
