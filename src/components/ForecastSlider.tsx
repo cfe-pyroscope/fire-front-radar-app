@@ -1,67 +1,139 @@
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import { Slider, Text } from "@mantine/core";
 import "../css/ForecastSlider.css";
 
 interface ForecastStep {
     time: string;
     lead_hours: number;
+    base_time: string;
 }
 
 interface ForecastSliderProps {
     forecastSteps: ForecastStep[];
-    selectedLeadHours: number;
-    onChange: (leadHours: number) => void;
+    selectedBaseTime: string | null;
+    selectedLeadHours: number | null;
+    onChange: (baseTime: string) => void;
 }
 
 const ForecastSlider: React.FC<ForecastSliderProps> = ({
     forecastSteps,
+    selectedBaseTime,
     selectedLeadHours,
     onChange,
 }) => {
+    // Early exit if no data
     if (forecastSteps.length === 0) {
         return <Text color="red">No forecast steps available</Text>;
     }
 
-    // Determine step automatically (fallback to 1 if not uniform)
-    const step = forecastSteps.length > 1
-        ? forecastSteps[1].lead_hours - forecastSteps[0].lead_hours
-        : 1;
+    // Sort by base_time ascending
+    const sortedForecastSteps = useMemo(
+        () =>
+            [...forecastSteps].sort(
+                (a, b) => new Date(a.base_time).getTime() - new Date(b.base_time).getTime()
+            ),
+        [forecastSteps]
+    );
 
-    const min = forecastSteps[0].lead_hours;
-    const max = forecastSteps[forecastSteps.length - 1].lead_hours;
+    // Extract unique base_times
+    const uniqueBaseTimes = useMemo(() => {
+        return Array.from(new Set(sortedForecastSteps.map((s) => s.base_time)));
+    }, [sortedForecastSteps]);
 
-    // Always show marks at first/last hour, and every 24h
-    const marks = forecastSteps
-        .filter(
-            (stepObj, idx) =>
-                stepObj.lead_hours % 24 === 0 ||
-                idx === 0 ||
-                idx === forecastSteps.length - 1
-        )
-        .map((step) => ({
-            value: step.lead_hours,
-            label: `${step.lead_hours}h`,
-        }));
+    // Determine base_time to use
+    const effectiveSelectedBaseTime = useMemo(() => {
+        if (selectedBaseTime && uniqueBaseTimes.includes(selectedBaseTime)) {
+            return selectedBaseTime;
+        }
+        return uniqueBaseTimes[0] || null;
+    }, [selectedBaseTime, uniqueBaseTimes]);
+
+    useEffect(() => {
+        console.log("✅✅✅ Debug — SelectedStep Lookup:");
+        console.log("✅✅✅ effectiveSelectedBaseTime:", effectiveSelectedBaseTime);
+        console.log("✅✅✅ selectedLeadHours:", selectedLeadHours);
+        console.log("✅✅✅ sortedForecastSteps sample:", sortedForecastSteps.slice(0, 3));
+    }, [effectiveSelectedBaseTime, selectedLeadHours, sortedForecastSteps]);
+
+
+    // Set initial base_time if missing
+    useEffect(() => {
+        if (!selectedBaseTime && uniqueBaseTimes.length > 0) {
+            onChange(uniqueBaseTimes[0]);
+        }
+    }, [selectedBaseTime, uniqueBaseTimes, onChange]);
+
+    // Match selected forecast step
+    const selectedStep = useMemo(() => {
+        // Try to find exact match
+        const exact = sortedForecastSteps.find(
+            (s) =>
+                s.base_time === effectiveSelectedBaseTime &&
+                s.lead_hours === selectedLeadHours
+        );
+        if (exact) return exact;
+
+        // Fallback to first match by base_time only
+        return sortedForecastSteps.find(
+            (s) => s.base_time === effectiveSelectedBaseTime
+        ) || null;
+    }, [sortedForecastSteps, effectiveSelectedBaseTime, selectedLeadHours]);
+
+    // Current slider index
+    const selectedIndex = uniqueBaseTimes.findIndex(
+        (bt) => bt === effectiveSelectedBaseTime
+    );
+
+    // Slider marks
+    const marks = uniqueBaseTimes.map((bt, index) => {
+        const date = new Date(bt);
+        const isEdge = index === 0 || index === uniqueBaseTimes.length - 1;
+        return {
+            value: index,
+            label: date.toLocaleDateString(undefined, {
+                month: isEdge ? "short" : undefined,
+                day: "numeric",
+            }),
+        };
+    });
 
     return (
         <div className="forecast-slider-container">
-            <Text mb={4} id="forecast-slider-label">
-                Available dates and times
+            <Text size="sm" mb={4}>Forecast base date:</Text>
+            <Text size="sm" mb={8}>
+                {selectedStep
+                    ? new Date(selectedStep.base_time).toLocaleDateString(undefined, {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                    })
+                    : "—"}
             </Text>
+
+            <Text size="sm" mb={4}>Forecast date and time:</Text>
+            <Text size="sm" mb={8}>
+                {selectedStep
+                    ? new Date(selectedStep.time).toLocaleString(undefined, {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        timeZone: "UTC",
+                        hour12: false,
+                    })
+                    : "—"}
+            </Text>
+
+
             <Slider
-                aria-labelledby="forecast-slider-label"
-                min={min}
-                max={max}
-                step={step}
-                value={selectedLeadHours}
-                onChange={onChange}
+                min={0}
+                max={uniqueBaseTimes.length - 1}
+                step={1}
+                value={selectedIndex}
+                onChange={(val) => onChange(uniqueBaseTimes[val])}
                 marks={marks}
-                label={(val) => {
-                    const stepObj = forecastSteps.find((s) => s.lead_hours === val);
-                    return stepObj
-                        ? new Date(stepObj.time).toUTCString()
-                        : `${val}h`;
-                }}
+                label={null}
                 thumbSize={16}
                 styles={{ markLabel: { fontSize: 10 } }}
             />
