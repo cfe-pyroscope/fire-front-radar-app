@@ -42,7 +42,7 @@ const ForecastSelect: React.FC<ForecastSelectProps> = ({
             acc[s.base_time] = (acc[s.base_time] ?? 0) + 1;
             return acc;
         }, {});
-        console.log("🌟🌟🌟 [ForecastSelect] props changed", {
+        console.log("[ForecastSelect] props changed", {
             count: forecastSteps.length,
             byBaseTimeCounts: byBase,
             sampleSteps: sample,
@@ -64,7 +64,7 @@ const ForecastSelect: React.FC<ForecastSelectProps> = ({
             (a, b) =>
                 new Date(a.forecast_time).getTime() - new Date(b.forecast_time).getTime()
         );
-        console.log("🌟🌟🌟 [ForecastSelect] uniqueSteps computed", {
+        console.log("[ForecastSelect] uniqueSteps computed", {
             inputCount: forecastSteps.length,
             uniqueCount: out.length,
             first: out[0]?.forecast_time,
@@ -83,7 +83,7 @@ const ForecastSelect: React.FC<ForecastSelectProps> = ({
     );
 
     useEffect(() => {
-        console.log("🌟🌟🌟 [ForecastSelect] data for <Select>", data.map(d => d.label));
+        console.log("[ForecastSelect] data for <Select>", data.map(d => d.label));
     }, [data]);
 
     return (
@@ -94,7 +94,7 @@ const ForecastSelect: React.FC<ForecastSelectProps> = ({
                 value={selectedForecastTime ?? undefined}
                 onChange={(val) => {
                     if (val) {
-                        console.log("🌟🌟🌟 [ForecastSelect] onChange ->", val);
+                        console.log("[ForecastSelect] onChange ->", val);
                         onChange(val); // send raw ISO through
                     }
                 }}

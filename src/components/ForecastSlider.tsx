@@ -9,124 +9,126 @@ interface ForecastStep {
 
 interface ForecastSliderProps {
     forecastSteps: ForecastStep[];
-    selectedBaseTime: string | null;
-    selectedForecastTime: string | null;       // ← changed
-    onChange: (baseTime: string) => void;      // slider still chooses base_time
+    selectedForecastTime: string | null;            // actively displayed map time
+    onForecastTimeChange?: (forecastTime: string) => void; // used in forecast-time mode
 }
 
 const ForecastSlider: React.FC<ForecastSliderProps> = ({
     forecastSteps,
-    selectedBaseTime,
     selectedForecastTime,
-    onChange,
+    onForecastTimeChange,
 }) => {
     if (forecastSteps.length === 0) {
         return <Text color="red">No forecast steps available</Text>;
     }
 
-    // Sort by base_time ascending
+    // Sort by base_time then by forecast_time for stable behavior
     const sortedForecastSteps = useMemo(
         () =>
-            [...forecastSteps].sort(
-                (a, b) => new Date(a.base_time).getTime() - new Date(b.base_time).getTime()
-            ),
+            [...forecastSteps].sort((a, b) => {
+                const bt = new Date(a.base_time).getTime() - new Date(b.base_time).getTime();
+                if (bt !== 0) return bt;
+                return new Date(a.forecast_time).getTime() - new Date(b.forecast_time).getTime();
+            }),
         [forecastSteps]
     );
 
-    // Unique base times
+    // Distinct base_time values
     const uniqueBaseTimes = useMemo(
         () => Array.from(new Set(sortedForecastSteps.map((s) => s.base_time))),
         [sortedForecastSteps]
     );
 
-    // Determine base_time to use
-    const effectiveSelectedBaseTime = useMemo(() => {
-        if (selectedBaseTime && uniqueBaseTimes.includes(selectedBaseTime)) {
-            return selectedBaseTime;
-        }
-        return uniqueBaseTimes[0] || null;
-    }, [selectedBaseTime, uniqueBaseTimes]);
+    // If there is only one base_time, we are in "forecast-time mode" (by_forecast)
+    const isForecastTimeMode = uniqueBaseTimes.length === 1;
 
-    useEffect(() => {
-        if (!selectedBaseTime && uniqueBaseTimes.length > 0) {
-            onChange(uniqueBaseTimes[0]);
-        }
-    }, [selectedBaseTime, uniqueBaseTimes, onChange]);
-
-    // Match selected forecast step using base_time + forecast_time
-    const selectedStep = useMemo(() => {
-        // Try exact match
-        const exact = sortedForecastSteps.find(
-            (s) =>
-                s.base_time === effectiveSelectedBaseTime &&
-                s.forecast_time === selectedForecastTime
+    // ===== Mode A: forecast-time mode (by_forecast) =====
+    if (isForecastTimeMode) {
+        const times = useMemo(
+            () => Array.from(new Set(sortedForecastSteps.map((s) => s.forecast_time))),
+            [sortedForecastSteps]
         );
-        if (exact) return exact;
 
-        // Fallback to first with matching base_time
+        const selectedIndex = useMemo(() => {
+            const idx = times.findIndex((t) => t === selectedForecastTime);
+            return idx >= 0 ? idx : 0;
+        }, [times, selectedForecastTime]);
+
+        const marks = useMemo(() => {
+            return times.map((t, i) => {
+                const d = new Date(t);
+                const isFirst = i === 0;
+                const isLast = i === times.length - 1;
+                const isCenter = i === Math.floor(times.length / 2);
+                const shouldLabel = isFirst || isCenter || isLast;
+                return {
+                    value: i,
+                    label: shouldLabel
+                        ? d.toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            timeZone: "UTC",
+                        })
+                        : undefined,
+                };
+            });
+        }, [times]);
+
+        const current = times[selectedIndex] ?? null;
+
         return (
-            sortedForecastSteps.find((s) => s.base_time === effectiveSelectedBaseTime) ||
-            null
+            <div className="forecast-slider-container">
+                <Text size="sm" mb={4}>Forecast base date:</Text>
+                <Text size="sm" mb={8}>
+                    {new Date(sortedForecastSteps[0].base_time).toLocaleDateString(undefined, {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                    })}
+                </Text>
+
+                <Text size="sm" mb={4}>Forecast date and time (UTC):</Text>
+                <Text size="sm" mb={8}>
+                    {current
+                        ? new Date(current).toLocaleString(undefined, {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            timeZone: "UTC",
+                            hour12: false,
+                        })
+                        : "—"}
+                </Text>
+
+                <Slider
+                    min={0}
+                    max={Math.max(times.length - 1, 0)}
+                    step={1}
+                    value={selectedIndex}
+                    onChange={(val) => {
+                        const t = times[val];
+                        if (t && onForecastTimeChange) onForecastTimeChange(t);
+                    }}
+                    marks={marks}
+                    label={null}
+                    thumbSize={16}
+                    styles={{
+                        markLabel: {
+                            fontSize: 10,
+                            fontWeight: 500,
+                        },
+                        mark: {
+                            height: '6px',
+                            width: '2px',
+                            backgroundColor: '#dee2e6'
+                        }
+                    }}
+                />
+            </div>
         );
-    }, [sortedForecastSteps, effectiveSelectedBaseTime, selectedForecastTime]);
-
-    const selectedIndex = uniqueBaseTimes.findIndex(
-        (bt) => bt === effectiveSelectedBaseTime
-    );
-
-    const marks = uniqueBaseTimes.map((bt, index) => {
-        const date = new Date(bt);
-        const isEdge = index === 0 || index === uniqueBaseTimes.length - 1;
-        return {
-            value: index,
-            label: date.toLocaleDateString(undefined, {
-                month: isEdge ? "short" : undefined,
-                day: "numeric",
-            }),
-        };
-    });
-
-    return (
-        <div className="forecast-slider-container">
-            <Text size="sm" mb={4}>Forecast base date:</Text>
-            <Text size="sm" mb={8}>
-                {selectedStep
-                    ? new Date(selectedStep.base_time).toLocaleDateString(undefined, {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                    })
-                    : "—"}
-            </Text>
-
-            <Text size="sm" mb={4}>Forecast date and time:</Text>
-            <Text size="sm" mb={8}>
-                {selectedStep
-                    ? new Date(selectedStep.forecast_time).toLocaleString(undefined, {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        timeZone: "UTC",
-                        hour12: false,
-                    })
-                    : "—"}
-            </Text>
-
-            <Slider
-                min={0}
-                max={uniqueBaseTimes.length - 1}
-                step={1}
-                value={selectedIndex}
-                onChange={(val) => onChange(uniqueBaseTimes[val])}
-                marks={marks}
-                label={null}
-                thumbSize={16}
-                styles={{ markLabel: { fontSize: 10 } }}
-            />
-        </div>
-    );
+    }
 };
 
 export default ForecastSlider;

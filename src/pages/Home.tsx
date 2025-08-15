@@ -52,7 +52,7 @@ function useAvailableDates(indexName: "pof" | "fopi") {
         (async () => {
             try {
                 const url = `${API_BASE_URL}/api/${indexName}/available_dates`;
-                console.log("🌟🌟🌟 [useAvailableDates] GET", url);
+                console.log("[useAvailableDates] GET", url);
                 const res = await fetch(url);
                 if (!res.ok) throw new Error("Failed to fetch available dates");
                 const data = await res.json();
@@ -61,9 +61,9 @@ function useAvailableDates(indexName: "pof" | "fopi") {
                     return new Date(Date.UTC(dt.getFullYear(), dt.getMonth(), dt.getDate(), 12));
                 });
                 if (!cancelled) setAvailableDates(parsed);
-                console.log("🌟🌟🌟 [useAvailableDates] OK", { indexName, count: parsed.length, first: parsed[0], last: parsed[parsed.length - 1] });
+                console.log("[useAvailableDates] OK", { indexName, count: parsed.length, first: parsed[0], last: parsed[parsed.length - 1] });
             } catch (err) {
-                console.error("🌟🌟🌟 Failed to fetch available dates:", err);
+                console.error("Failed to fetch available dates:", err);
                 if (!cancelled) setAvailableDates(null);
             }
         })();
@@ -81,7 +81,7 @@ function useLatestDate(indexName: "pof" | "fopi") {
         (async () => {
             try {
                 const url = `${API_BASE_URL}/api/${indexName}/latest_date`;
-                console.log("🌟🌟🌟 [useLatestDate] GET", url);
+                console.log("[useLatestDate] GET", url);
                 const res = await fetch(url);
                 if (!res.ok) throw new Error("Failed to fetch latest date");
                 const data = await res.json();
@@ -89,10 +89,10 @@ function useLatestDate(indexName: "pof" | "fopi") {
                 if (!isNaN(parsed.getTime())) {
                     const utcNoon = new Date(Date.UTC(parsed.getFullYear(), parsed.getMonth(), parsed.getDate(), 12));
                     if (!cancelled) setLatest(utcNoon);
-                    console.log("🌟🌟🌟 [useLatestDate] OK", { indexName, utcNoon: utcNoon.toISOString() });
+                    console.log("[useLatestDate] OK", { indexName, utcNoon: utcNoon.toISOString() });
                 }
             } catch (err) {
-                console.error("🌟🌟🌟 Failed to fetch latest date:", err);
+                console.error("Failed to fetch latest date:", err);
                 if (!cancelled) setLatest(null);
             }
         })();
@@ -123,17 +123,17 @@ function useMetadata(indexName: "pof" | "fopi", mode: "by_date" | "by_forecast",
 
                 const url =
                     mode === "by_forecast"
-                        ? `${API_BASE_URL}/api/${indexName}/by_forecast?forecast_init=${encodeURIComponent(baseIsoZ)}`
+                        ? `${API_BASE_URL}/api/${indexName}/by_forecast?base_time=${encodeURIComponent(baseIsoZ)}`
                         : `${API_BASE_URL}/api/${indexName}/by_date?base_time=${encodeURIComponent(baseIsoZ)}`;
 
-                console.log("🌟🌟🌟 [useMetadata] GET", { url, indexName, mode, baseIsoZ, selectedDateISO: selectedDate.toISOString() });
+                console.log("[useMetadata] GET", { url, indexName, mode, baseIsoZ, selectedDateISO: selectedDate.toISOString() });
 
                 const res = await fetch(url);
                 const rawText = await res.text();
                 if (!res.ok) throw new Error(`Metadata API error ${res.status}: ${rawText}`);
                 const data = JSON.parse(rawText);
 
-                console.log("🌟🌟🌟 [useMetadata] response", {
+                console.log("[useMetadata] response", {
                     base_time: data.base_time,
                     stepsLength: Array.isArray(data.forecast_steps) ? data.forecast_steps.length : null,
                     sample: Array.isArray(data.forecast_steps) ? data.forecast_steps.slice(0, 12) : null,
@@ -162,7 +162,7 @@ function useMetadata(indexName: "pof" | "fopi", mode: "by_date" | "by_forecast",
                     initialForecastTime = normalizedSteps[0]?.forecast_time ?? null;
                 }
 
-                console.log("🌟🌟🌟 [useMetadata] normalized", {
+                console.log("[useMetadata] normalized", {
                     baseTime,
                     count: normalizedSteps.length,
                     first: normalizedSteps[0],
@@ -178,7 +178,7 @@ function useMetadata(indexName: "pof" | "fopi", mode: "by_date" | "by_forecast",
                     loading: false
                 });
             } catch (err: any) {
-                console.error("🌟🌟🌟 [useMetadata] error", err?.message || err);
+                console.error("[useMetadata] error", err?.message || err);
                 if (!cancelled) setState((s) => ({ ...s, loading: false, error: err?.message || "Failed to load data for this date" }));
             }
         };
@@ -215,7 +215,7 @@ const Home: React.FC = () => {
 
     // Debug key state changes
     useEffect(() => {
-        console.log("🌟🌟🌟 [Home] state", {
+        console.log("[Home] state", {
             indexName, mode,
             selectedDate: selectedDate?.toISOString(),
             baseTime,
@@ -280,9 +280,8 @@ const Home: React.FC = () => {
                         ) : (
                             <ForecastSlider
                                 forecastSteps={forecastSteps}
-                                selectedBaseTime={baseTime!}
                                 selectedForecastTime={(selectedForecastTimeLocal ?? selectedForecastTime)!}
-                                onChange={() => { }}
+                                onForecastTimeChange={(t) => setSelectedForecastTimeLocal(t)}
                             />
                         )}
                         {scale && (
