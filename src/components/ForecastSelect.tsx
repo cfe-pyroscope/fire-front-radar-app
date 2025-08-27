@@ -35,8 +35,8 @@ const ForecastSelect: React.FC<ForecastSelectProps> = ({
 }) => {
     useEffect(() => {
         const sample = forecastSteps.slice(0, 12).map(s => ({
-            base: s.base_time,
-            ft: s.forecast_time,
+            base_time: s.base_time,
+            forecast_time: s.forecast_time,
         }));
         const byBase = forecastSteps.reduce<Record<string, number>>((acc, s) => {
             acc[s.base_time] = (acc[s.base_time] ?? 0) + 1;
@@ -83,7 +83,7 @@ const ForecastSelect: React.FC<ForecastSelectProps> = ({
     );
 
     useEffect(() => {
-        console.log("[ForecastSelect] data for <Select>", data.map(d => d.label));
+        // console.log("[ForecastSelect] data for <Select>", data.map(d => d.label));
     }, [data]);
 
     return (
@@ -94,7 +94,7 @@ const ForecastSelect: React.FC<ForecastSelectProps> = ({
                 value={selectedForecastTime ?? undefined}
                 onChange={(val) => {
                     if (val) {
-                        console.log("[ForecastSelect] onChange ->", val);
+                        // console.log("[ForecastSelect] onChange ->", val);
                         onChange(val); // send raw ISO through
                     }
                 }}

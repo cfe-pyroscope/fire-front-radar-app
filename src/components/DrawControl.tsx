@@ -52,7 +52,7 @@ const DrawControl: React.FC<DrawControlProps> = ({ onDrawComplete }) => {
 
             if (e.layerType === 'rectangle' && layer instanceof L.Rectangle) {
                 const bounds = layer.getBounds();
-                console.log('Rectangle bounds:', bounds.toBBoxString());
+                // console.log('Rectangle bounds:', bounds.toBBoxString());
 
                 // Add the layer temporarily to show the selection
                 drawnItems.addLayer(layer);
@@ -68,7 +68,7 @@ const DrawControl: React.FC<DrawControlProps> = ({ onDrawComplete }) => {
                 onDrawComplete(bounds);
             } else if (e.layerType === 'polygon' && layer instanceof L.Polygon) {
                 const bounds = layer.getBounds();
-                console.log('🔷 Polygon bounds:', bounds.toBBoxString());
+                // console.log('Polygon bounds:', bounds.toBBoxString());
 
                 // Add the layer temporarily to show the selection
                 drawnItems.addLayer(layer);

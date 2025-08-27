@@ -1,5 +1,5 @@
 import React from "react";
-import "../css/ColorBarLegend.css";
+import "../css/HeatmapLegend.css";
 
 interface Props {
     vmin: number;
@@ -7,7 +7,7 @@ interface Props {
     index?: string;
 }
 
-const ColorBarLegend: React.FC<Props> = ({ vmin, vmax, index = "" }) => {
+const HeatmapLegend: React.FC<Props> = ({ vmin, vmax, index = "" }) => {
     const colors = ["#00000000", "#fff7ec", "#fee8c8", "#fdd49e", "#fdbb84",
         "#fc8d59", "#ef6548", "#d7301f", "#b30000", "#7f0000"];
 
@@ -147,4 +147,4 @@ const ColorBarLegend: React.FC<Props> = ({ vmin, vmax, index = "" }) => {
     );
 };
 
-export default ColorBarLegend;
+export default HeatmapLegend;
