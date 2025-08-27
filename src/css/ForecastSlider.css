@@ -1,8 +1,6 @@
 .forecast-slider-container {
-    position: absolute;
-    top: 250px;
-    right: 10px;
-    z-index: 1000;
+    position: relative;
+    margin-top: 15px;
     background: rgba(255, 255, 255, 0.9);
     padding: 6px 10px;
     border-radius: 4px;

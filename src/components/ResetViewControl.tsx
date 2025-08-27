@@ -21,10 +21,10 @@ const ResetViewControl = () => {
 
                 container.onclick = () => {
                     if (container.classList.contains('disabled')) {
-                        console.log("🚫 Button is disabled");
+                        // console.log("Button is disabled");
                         return;
                     }
-                    console.log("🎯 Resetting view");
+                    // console.log("Resetting view");
                     map.setView(INITIAL_MAP_CENTER, INITIAL_MAP_ZOOM);
                     // After reset, disable the button since we're back at initial position
                     container.classList.add('disabled');
@@ -41,7 +41,7 @@ const ResetViewControl = () => {
         const enableButton = () => {
             if (!userHasInteractedRef.current) {
                 userHasInteractedRef.current = true;
-                console.log("🔓 User interacted with map - enabling reset button");
+                // console.log("User interacted with map - enabling reset button");
                 if (containerRef.current) {
                     containerRef.current.classList.remove('disabled');
                 }
@@ -52,7 +52,7 @@ const ResetViewControl = () => {
         map.on('movestart', enableButton);  // User starts dragging
         map.on('zoomstart', enableButton);  // User starts zooming
 
-        console.log("Reset button starts disabled");
+        // console.log("Reset button starts disabled");
 
         return () => {
             map.removeControl(resetControl);

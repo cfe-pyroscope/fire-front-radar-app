@@ -13,7 +13,6 @@ import {
 import { Center, Stack, Tooltip, UnstyledButton } from '@mantine/core';
 import classes from '../css/NavbarMinimal.module.css';
 import '../css/Sidenav.css';
-import { BadgeCard } from './BadgeCard';
 
 interface NavbarLinkProps {
   icon: typeof IconHome2;

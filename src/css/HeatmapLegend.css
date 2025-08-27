@@ -1,8 +1,7 @@
 .colorbar-container {
     position: absolute;
-    bottom: 30px;
-    right: 10px;
-    z-index: 1001;
+    bottom: 0;
+    right: 0;
 }
 
 .colorbar-legend {

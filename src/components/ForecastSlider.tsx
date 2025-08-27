@@ -10,17 +10,21 @@ interface ForecastStep {
 interface ForecastSliderProps {
     forecastSteps: ForecastStep[];
     selectedForecastTime: string | null;            // actively displayed map time
-    onForecastTimeChange?: (forecastTime: string) => void; // used in forecast-time mode
+    onChange?: (forecastTime: string) => void; // used in forecast-time mode
 }
 
 const ForecastSlider: React.FC<ForecastSliderProps> = ({
     forecastSteps,
     selectedForecastTime,
-    onForecastTimeChange,
+    onChange: onForecastTimeChange,
 }) => {
     if (forecastSteps.length === 0) {
         return <Text color="red">No forecast steps available</Text>;
     }
+
+    console.log("[ForecastSlider] forecastSteps", forecastSteps)
+    console.log("[ForecastSlider] selectedForecastTime", selectedForecastTime)
+    console.log("[ForecastSlider] onForecastTimeChange", onForecastTimeChange)
 
     // Sort by base_time then by forecast_time for stable behavior
     const sortedForecastSteps = useMemo(
@@ -41,6 +45,11 @@ const ForecastSlider: React.FC<ForecastSliderProps> = ({
 
     // If there is only one base_time, we are in "forecast-time mode" (by_forecast)
     const isForecastTimeMode = uniqueBaseTimes.length === 1;
+
+    const handleSliderChange = (val: number) => {
+        const t = times[val];
+        if (t) onForecastTimeChange?.(t);         // <- call the aliased prop
+    };
 
     // ===== Mode A: forecast-time mode (by_forecast) =====
     if (isForecastTimeMode) {
@@ -107,10 +116,7 @@ const ForecastSlider: React.FC<ForecastSliderProps> = ({
                     max={Math.max(times.length - 1, 0)}
                     step={1}
                     value={selectedIndex}
-                    onChange={(val) => {
-                        const t = times[val];
-                        if (t && onForecastTimeChange) onForecastTimeChange(t);
-                    }}
+                    onChange={handleSliderChange}
                     marks={marks}
                     label={null}
                     thumbSize={16}

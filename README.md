@@ -14,14 +14,16 @@ Users can interactively explore and analyze both indices, choosing between date-
 
 src/  
 ├── api/  
-│   ├── client.ts                     # HTTP client setup (e.g. fetch wrapper or axios instance)      
+│   ├── client.ts                     # HTTP client setup (e.g. fetch wrapper or axios instance)
+│   ├── fireIndexApi.ts               # API service functions for fetching fire index data and normalizing responses             
 │  
 ├── assets/                           # images   
 │  
 ├── components/  
 │   ├── ByModeInfoPopover.tsx         # Info tooltip explaining the "by date"/"by forecast" toggle  
 │   ├── ByModeToggle.tsx              # Mantine SegmentedControl to toggle between "by date" and "by forecast" modes  
-│   ├── ColorBarLegend.tsx            # Dynamic color legend based on selected area   
+│   ├── ColorBarLegend.tsx            # Dynamic color legend based on selected area     
+│   ├── ControlsController.tsx        # Contains IndexToggle, ByModeToggle, DatePicker, ForecastSelect, ForecastSlider, ColorBarLegend 
 │   ├── DatePicker.tsx                # Mantine DatePickerInput; allows user to pick a date or forecast initialization time  
 │   ├── DownloadButton.tsx            # Download button; allows user to download the heatmap image   
 │   ├── DrawControl.tsx               # Drawing tools; allow user to select an area on the map  
@@ -37,8 +39,14 @@ src/
 │   ├── MapLabels.tsx                 # To have map labels over the heatmap image   
 │   └── ResetViewControl.tsx          # Reset the map at the initial zoom and position   
 │  
+├── hooks/  
+│   └── useFireIndex.ts               # Custom React hooks that wrap fireIndexApi calls and manage request state     
+│
+├── layouts/  
+│   └── Layout.tsx                      
+│    
 ├── pages/  
-│   └── Home.tsx                      # Main map dashboard; combines map, toggles, date picker, forecast controller, etc.  
+│   └── Home.tsx                      # Main map dashboard; combines map, toggles, date picker, forecast controller, etc.   
 │  
 ├── routes/  
 │   └── Router.tsx                    # React Router setup; maps routes to components/pages  
@@ -46,7 +54,6 @@ src/
 ├── utils/  
 │   └── config.ts                     # Base API URL and environment config  
 │   
-├── App.tsx                           # Root component, wraps app layout; could be minimal if Router is main handler  
 ├── main.tsx                          # Entry point; ReactDOM render, wraps app with MantineProvider and Router  
 
 

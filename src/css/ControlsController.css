@@ -1,0 +1,12 @@
+.controls-controller {
+    position: absolute;
+    top: 60px;
+    right: 10px;
+    z-index: 10;
+    height: calc(100% - 100px);
+    background-color: transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: end;
+    justify-content: flex-start;
+}
