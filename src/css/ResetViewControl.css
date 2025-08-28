@@ -1,10 +1,10 @@
 .leaflet-reset-button {
     position: absolute;
     top: 110px;
-    left: 70px;
+    left: 10px;
     z-index: 1000;
-    width: 33px;
-    height: 33px;
+    width: 30px;
+    height: 30px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     border: none;
     background-clip: padding-box;
@@ -21,7 +21,8 @@
 }
 
 .leaflet-reset-button:hover:not(.disabled) {
-    background-color: #fff;
+    background: #ebebeb;
+    color: currentColor;
 }
 
 .leaflet-reset-button.disabled {

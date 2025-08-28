@@ -14,6 +14,9 @@ const DrawControl: React.FC<DrawControlProps> = ({ onDrawComplete }) => {
     const map = useMap();
     const drawnItemsRef = useRef<L.FeatureGroup>(new L.FeatureGroup());
 
+    L.drawLocal.draw.toolbar.buttons.rectangle = "Select a rectangular area";
+    L.drawLocal.draw.toolbar.buttons.polygon = "Select a polygonal area";
+
     useEffect(() => {
         const drawnItems = drawnItemsRef.current;
         map.addLayer(drawnItems);

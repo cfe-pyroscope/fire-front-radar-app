@@ -72,6 +72,7 @@ const HeatmapOverlay: React.FC<HeatmapOverlayProps> = ({
                 // 2) fetch PNG + metadata via API layer
                 const { blob, extent3857, vmin, vmax } = await getHeatmapImage(
                     indexName,
+                    mode,
                     base,
                     forecastTime,
                     bbox,

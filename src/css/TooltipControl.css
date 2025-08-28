@@ -1,0 +1,171 @@
+.tooltip-control-content {
+    position: absolute;
+    top: 100px;
+    left: 10px;
+    width: 30px;
+    height: 30px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    border: none;
+    background-clip: padding-box;
+    background-color: #FFF;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    user-select: none;
+}
+
+
+/* Base button */
+
+/* Active state: blue bg + white icon */
+.leaflet-tooltip-button.active .tooltip-control-content {
+    background: #1C7ED6;
+}
+
+.leaflet-tooltip-button.active .tooltip-control-content svg {
+    stroke: #ffffff;
+}
+
+.leaflet-tooltip-button .tooltip-control-content:hover {
+    background: #ebebeb;
+    color: currentColor;
+}
+
+
+
+
+
+/* ******* TOOLTIP POPUP ********** */
+
+
+/* container */
+.leaflet-popup.fire-tooltip .leaflet-popup-content-wrapper {
+    border-radius: 12px;
+    padding: 10px 12px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+/* layout */
+.fire-tip {
+    min-width: 260px;
+    max-width: 320px;
+}
+
+.tip-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.tip-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+}
+
+.tip-title .index {
+    letter-spacing: .02em;
+}
+
+.tip-title .param {
+    opacity: .7;
+    font-weight: 500;
+}
+
+.flame {
+    filter: saturate(1.2);
+}
+
+/* chip colored by palette */
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: var(--chip-bg, #f3f4f6);
+    color: var(--chip-fg, #111827);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.chip .chip-value {
+    font-variant-numeric: tabular-nums;
+    background: rgba(255, 255, 255, 0.25);
+    padding: 2px 6px;
+    border-radius: 999px;
+    font-weight: 800;
+}
+
+/* risk bar uses your discrete palette */
+.risk-bar {
+    position: relative;
+    height: 6px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--risk-gradient);
+    opacity: 0.95;
+    margin-bottom: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.risk-bar span {
+    display: block;
+    height: 100%;
+    background: rgba(255, 255, 255, .9);
+    mix-blend-mode: soft-light;
+}
+
+/* grid */
+.tip-grid {
+    display: grid;
+    grid-template-columns: 92px 1fr;
+    gap: 4px 10px;
+}
+
+.tip-grid .label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #6b7280;
+}
+
+.tip-grid .value {
+    font-size: 13px;
+    color: #111827;
+}
+
+.tip-grid .value.mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-variant-numeric: tabular-nums;
+}
+
+/* optional dark mode */
+.leaflet-container.dark .leaflet-popup.fire-tooltip .leaflet-popup-content-wrapper {
+    background: #0b1220;
+    color: #e5e7eb;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.leaflet-container.dark .tip-grid .label {
+    color: #a3a7b2;
+}
+
+.leaflet-container.dark .tip-grid .value {
+    color: #f3f4f6;
+}
+
+@media (max-width: 768px) {
+    .tooltip-control-content {
+        top: 180px;
+    }
+}

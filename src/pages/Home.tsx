@@ -17,13 +17,10 @@ import logo2 from "../assets/ECMWF-logo-white.png";
 import LogoContainer from "../components/LogoContainer";
 import Loader from "../components/Loader";
 
-import LocationSearch from "../components/LocationSearch";
-import ResetViewControl from "../components/ResetViewControl";
-import DrawControl from "../components/DrawControl";
-import DownloadButton from "../components/DownloadButton";
 import MapLabels from "../components/MapLabels";
 import HeatmapController from "../components/HeatmapController";
-import ControlsController from "../components/ControlsController";
+import LeftControlsController from "../components/LeftControlsController";
+import RightControlsController from "../components/RightControlsController";
 
 import { useAvailableDates, useLatestDate, useForecastSteps } from "../hooks/useFireIndex";
 
@@ -115,7 +112,7 @@ const Home: React.FC = () => {
             />
 
             <div className="map-container">
-                <ControlsController
+                <RightControlsController
                     indexName={indexName}
                     onIndexToggle={setIndexName}
                     mode={mode}
@@ -147,10 +144,14 @@ const Home: React.FC = () => {
                     worldCopyJump={false}
                     style={{ height: "100%", width: "100%", zIndex: 0 }}
                 >
-                    <LocationSearch />
-                    <ResetViewControl />
-                    <DrawControl onDrawComplete={setDrawnBounds} />
-                    <DownloadButton />
+                    <LeftControlsController
+                        onDrawComplete={setDrawnBounds}
+                        indexName={indexName}
+                        mode={mode}
+                        baseTime={baseTime ?? null}
+                        forecastTime={(selectedForecastTimeLocal ?? selectedForecastTime) ?? null}
+                    />
+
                     <MapLabels />
 
                     <TileLayer

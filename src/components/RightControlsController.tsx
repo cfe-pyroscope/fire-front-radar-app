@@ -6,7 +6,7 @@ import DatePicker from "./DatePicker";
 import ForecastSelect from "./ForecastSelect";
 import ForecastSlider from "./ForecastSlider";
 import HeatmapLegend from "./HeatmapLegend";
-import "../css/ControlsController.css";
+import "../css/RightControlsController.css";
 
 /** Types shared with Home */
 export interface ForecastStep {
@@ -41,7 +41,7 @@ interface Props {
     scale: { vmin: number; vmax: number } | null;
 }
 
-const ControlsController: React.FC<Props> = ({
+const RightControlsController: React.FC<Props> = ({
     indexName,
     onIndexToggle,
     mode,
@@ -60,7 +60,7 @@ const ControlsController: React.FC<Props> = ({
 }) => {
     return (
         <>
-            <div className="controls-controller">
+            <div className="right-controls-controller">
                 <IndexToggle currentIndex={indexName} onToggle={onIndexToggle} />
                 <ByModeToggle mode={mode} onToggle={onModeToggle} />
                 <DatePicker
@@ -86,17 +86,16 @@ const ControlsController: React.FC<Props> = ({
                                 onChange={onForecastTimeChange}
                             />
                         )}
-
-                        {scale && (
-                            <div className="colorbar-container">
-                                <HeatmapLegend vmin={scale.vmin} vmax={scale.vmax} index={indexName} />
-                            </div>
-                        )}
                     </div>
                 )}
             </div>
+            {showControls && scale && (
+                <div className="colorbar-container">
+                    <HeatmapLegend vmin={scale.vmin} vmax={scale.vmax} index={indexName} />
+                </div>
+            )}
         </>
     );
 };
 
-export default ControlsController;
+export default RightControlsController;

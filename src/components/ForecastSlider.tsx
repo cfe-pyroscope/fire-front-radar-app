@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo } from "react";
 import { Slider, Text } from "@mantine/core";
+import { formatBaseDateLabel, formatCombinedDateTimeLabel } from "../utils/date";
 import "../css/ForecastSlider.css";
 
 interface ForecastStep {
@@ -46,17 +47,17 @@ const ForecastSlider: React.FC<ForecastSliderProps> = ({
     // If there is only one base_time, we are in "forecast-time mode" (by_forecast)
     const isForecastTimeMode = uniqueBaseTimes.length === 1;
 
-    const handleSliderChange = (val: number) => {
-        const t = times[val];
-        if (t) onForecastTimeChange?.(t);         // <- call the aliased prop
-    };
-
     // ===== Mode A: forecast-time mode (by_forecast) =====
     if (isForecastTimeMode) {
         const times = useMemo(
             () => Array.from(new Set(sortedForecastSteps.map((s) => s.forecast_time))),
             [sortedForecastSteps]
         );
+
+        const handleSliderChange = (val: number) => {
+            const t = times[val];
+            if (t) onForecastTimeChange?.(t);         // <- call the aliased prop
+        };
 
         const selectedIndex = useMemo(() => {
             const idx = times.findIndex((t) => t === selectedForecastTime);
@@ -85,31 +86,22 @@ const ForecastSlider: React.FC<ForecastSliderProps> = ({
 
         const current = times[selectedIndex] ?? null;
 
+        const baseDateLabel = formatBaseDateLabel(current, undefined, "UTC");
+        const combinedDateTimeLabel = formatCombinedDateTimeLabel(
+            current,
+            sortedForecastSteps[0]?.base_time,
+            undefined,
+            "UTC"
+        );
+
+
         return (
             <div className="forecast-slider-container">
                 <Text size="sm" mb={4}>Forecast base date:</Text>
-                <Text size="sm" mb={8}>
-                    {new Date(sortedForecastSteps[0].base_time).toLocaleDateString(undefined, {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                    })}
-                </Text>
+                <Text size="sm" mb={8}>{baseDateLabel}</Text>
 
                 <Text size="sm" mb={4}>Forecast date and time (UTC):</Text>
-                <Text size="sm" mb={8}>
-                    {current
-                        ? new Date(current).toLocaleString(undefined, {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            timeZone: "UTC",
-                            hour12: false,
-                        })
-                        : "—"}
-                </Text>
+                <Text size="sm" mb={8}>{combinedDateTimeLabel}</Text>
 
                 <Slider
                     min={0}

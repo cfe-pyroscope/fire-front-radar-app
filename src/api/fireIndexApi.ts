@@ -52,6 +52,22 @@ const toIsoZ = (d: Date) => {
     )}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}Z`;
 };
 
+
+const formatISO = (d: string | Date): string => {
+    const date = d instanceof Date ? d : new Date(d); // ensure we have a Date
+
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const hours = String(date.getUTCHours()).padStart(2, "0");
+    const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+    const seconds = String(date.getUTCSeconds()).padStart(2, "0");
+
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.00Z`;
+};
+
+
+
 /** Low-level fetch wrapper with better errors + optional AbortSignal */
 async function fetchJSON<T>(url: string, signal?: AbortSignal): Promise<T> {
     const res = await fetch(url, { signal });
@@ -128,15 +144,52 @@ export async function getForecastSteps(
 
 export async function getHeatmapImage(
     indexName: IndexName,
+    mode: Mode,
     baseTimeISO: string,
     forecastTimeISO: string,
     bbox3857Csv: string,              // "minX,minY,maxX,maxY" in EPSG:3857
     signal?: AbortSignal
 ): Promise<HeatmapImageResult> {
+
+    let base_time_param = baseTimeISO;
+    let forecast_time_param = forecastTimeISO;
+
+    // console.log("[foreIndexApi] mode", mode);
+    // console.log("[foreIndexApi] base_time_param", base_time_param);
+    // console.log("[foreIndexApi] forecast_time_param", forecast_time_param);
+
+    if (mode == "by_forecast") {
+        // Parse into Date objects
+        const baseDate = new Date(baseTimeISO);
+        const forecastDate = new Date(forecastTimeISO);
+
+        // base_time_param = forecast date with midnight UTC
+        base_time_param = formatISO(new Date(Date.UTC(
+            forecastDate.getUTCFullYear(),
+            forecastDate.getUTCMonth(),
+            forecastDate.getUTCDate(), // midnight
+            0, 0, 0
+        )));
+
+        // forecast_time_param = base date with forecast time
+        forecast_time_param = formatISO(new Date(Date.UTC(
+            baseDate.getUTCFullYear(),
+            baseDate.getUTCMonth(),
+            baseDate.getUTCDate(),
+            forecastDate.getUTCHours(),
+            forecastDate.getUTCMinutes(),
+            forecastDate.getUTCSeconds()
+        )));
+
+        // console.log("[foreIndexApi] mode", mode);
+        // console.log("[foreIndexApi] base_time_param", base_time_param);
+        // console.log("[foreIndexApi] forecast_time_param", forecast_time_param);
+    }
+
     const url =
         `${API_BASE_URL}/api/${indexName}/heatmap/image` +
-        `?base_time=${encodeURIComponent(baseTimeISO)}` +
-        `&forecast_time=${encodeURIComponent(forecastTimeISO)}` +
+        `?base_time=${encodeURIComponent(base_time_param)}` +
+        `&forecast_time=${encodeURIComponent(forecast_time_param)}` +
         `&bbox=${encodeURIComponent(bbox3857Csv)}`;
 
     const res = await fetch(url, { signal });
@@ -162,4 +215,63 @@ export async function getHeatmapImage(
     const blob = await res.blob();
 
     return { blob, extent3857, vmin, vmax };
+}
+
+
+// --- Add these types near your other exports ---
+export interface TooltipPoint {
+    input_epsg3857: { x: number; y: number };
+    lon: number;
+    lat: number;
+    nearest_grid: { lon: number; lat: number };
+}
+
+export interface TooltipResponse {
+    index: IndexName;              // "pof" | "fopi"
+    param: string;                 // e.g., "MODEL_FIRE"
+    value: number | null;          // fire risk value
+    point: TooltipPoint;
+    time: { base_time: string; forecast_time: string };
+}
+
+// --- Add this function among your service functions ---
+export async function getTooltipValue(
+    indexName: IndexName,
+    mode: Mode,
+    baseTimeISO: string,
+    forecastTimeISO: string,
+    coords3857: { x: number; y: number },
+    signal?: AbortSignal
+): Promise<TooltipResponse> {
+    let base_time_param = baseTimeISO;
+    let forecast_time_param = forecastTimeISO;
+
+    // Keep parity with getHeatmapImage's by_forecast mapping
+    if (mode === "by_forecast") {
+        const baseDate = new Date(baseTimeISO);
+        const forecastDate = new Date(forecastTimeISO);
+
+        base_time_param = formatISO(new Date(Date.UTC(
+            forecastDate.getUTCFullYear(),
+            forecastDate.getUTCMonth(),
+            forecastDate.getUTCDate(), 0, 0, 0
+        )));
+
+        forecast_time_param = formatISO(new Date(Date.UTC(
+            baseDate.getUTCFullYear(),
+            baseDate.getUTCMonth(),
+            baseDate.getUTCDate(),
+            forecastDate.getUTCHours(),
+            forecastDate.getUTCMinutes(),
+            forecastDate.getUTCSeconds()
+        )));
+    }
+
+    const url =
+        `${API_BASE_URL}/api/${indexName}/tooltip` +
+        `?base_time=${encodeURIComponent(base_time_param)}` +
+        `&forecast_time=${encodeURIComponent(forecast_time_param)}` +
+        `&coords=${encodeURIComponent(`${coords3857.x},${coords3857.y}`)}`;
+
+    return fetchJSON<TooltipResponse>(url, signal);
 }
