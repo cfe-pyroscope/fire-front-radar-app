@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
-import '../css/DownloadButton.css';
+import '../css/DownloadControl.css';
 import { IconDownload } from '@tabler/icons-react';
 import ReactDOMServer from 'react-dom/server';
 import domtoimage from 'dom-to-image';
 
-const DownloadButton = () => {
+const DownloadControl = () => {
     const map = useMap();
 
     useEffect(() => {
@@ -64,4 +64,4 @@ const DownloadButton = () => {
     return null;
 };
 
-export default DownloadButton;
+export default DownloadControl;

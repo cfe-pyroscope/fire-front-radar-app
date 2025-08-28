@@ -1,5 +1,6 @@
 import React, { useMemo, useEffect } from "react";
 import { Select } from "@mantine/core";
+import { formatDate } from "../utils/date";
 import "../css/ForecastSelect.css";
 
 interface ForecastStep {
@@ -14,19 +15,7 @@ interface ForecastSelectProps {
 }
 
 /** Format like "20 Jul, 2025 00:00" in UTC */
-const formatForecastLabel = (iso: string) => {
-    const d = new Date(iso);
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const pad = (n: number) => String(n).padStart(2, "0");
-
-    const day = pad(d.getUTCDate());
-    const mon = months[d.getUTCMonth()];
-    const year = d.getUTCFullYear();
-    const hh = pad(d.getUTCHours());
-    const mm = pad(d.getUTCMinutes());
-
-    return `${day} ${mon}, ${year} ${hh}:${mm}`;
-};
+const formatForecastLabel = (iso: string) => formatDate(iso, "UTC");
 
 const ForecastSelect: React.FC<ForecastSelectProps> = ({
     forecastSteps,

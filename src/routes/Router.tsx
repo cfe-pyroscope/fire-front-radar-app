@@ -8,10 +8,11 @@ export default function AppRoutes() {
     <Routes>
       {/* Routes with the Sidenav */}
       <Route element={<Layout />}>
-        <Route path="/" element={<Home />} />
+        {/* <Route path="/" element={<Home />} /> */}
       </Route>
 
       {/* Route without the Sidenav */}
+      <Route path="/" element={<Home />} />
       <Route path="/chart-test" element={<ChartTest />} />
     </Routes>
   );

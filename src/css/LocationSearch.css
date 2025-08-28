@@ -1,7 +1,7 @@
 .leaflet-control-geosearch {
     position: absolute;
     top: 0;
-    left: 70px;
+    left: 10px;
     right: auto;
     z-index: 1000;
 }

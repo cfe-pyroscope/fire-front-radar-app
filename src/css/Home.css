@@ -12,12 +12,12 @@
 
 .leaflet-control-zoom {
     top: 40px;
-    left: 70px;
+    left: 10px;
 }
 
 .leaflet-draw.leaflet-control {
     top: 100px;
-    left: 70px;
+    left: 10px;
 }
 
 .leaflet-touch .leaflet-control-layers,
@@ -26,6 +26,7 @@
     border: none;
     background-clip: padding-box;
 }
+
 
 @media (max-width: 768px) {
     .leaflet-control-zoom {
