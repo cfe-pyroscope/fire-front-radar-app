@@ -40,7 +40,7 @@ type Props = {
 const defaultProps: Required<Props> = {
     apiBase: 'http://127.0.0.1:8090/api',
     index: 'pof',
-    bbox: '1033428.6224155831%2C4259682.712276304%2C2100489.537276644%2C4770282.061221281',
+    bbox: '1386873.4412062382%2C4377089.987722335%2C1780982.759044607%2C4632389.662194825',
 };
 
 function buildUrl(apiBase: string, index: 'pof' | 'fopi', bbox: string | null) {

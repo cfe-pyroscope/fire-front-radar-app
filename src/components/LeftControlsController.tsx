@@ -7,6 +7,9 @@ import ResetViewControl from "./ResetViewControl";
 import DrawControl from "./DrawControl";
 import DownloadControl from "./DownloadControl";
 import TooltipControl from "./TooltipControl";
+import ChartSwiperControl from "./ChartSwiperControl";
+
+
 import "../css/LeftControlsController.css";
 
 interface Props {
@@ -15,6 +18,7 @@ interface Props {
     mode: "by_date" | "by_forecast";
     baseTime: string | null;
     forecastTime: string | null;
+    onOpenCharts?: () => void; // NEW
 }
 
 /**
@@ -26,6 +30,7 @@ const LeftControlsController: React.FC<Props> = ({
     mode,
     baseTime,
     forecastTime,
+    onOpenCharts,
 }) => {
     const canShowTooltip = Boolean(baseTime && forecastTime);
 
@@ -43,6 +48,7 @@ const LeftControlsController: React.FC<Props> = ({
                     mode={mode}
                 />
             )}
+            <ChartSwiperControl onClick={onOpenCharts} />
         </>
     );
 };

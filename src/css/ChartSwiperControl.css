@@ -1,6 +1,7 @@
-.leaflet-download-button {
-    top: 100px;
-    left: 0;
+.chart-swiper-button {
+    position: absolute;
+    top: 330px;
+    left: 10px;
     width: 30px;
     height: 30px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
@@ -14,16 +15,18 @@
     cursor: pointer;
     font-size: 18px;
     user-select: none;
+    z-index: 1001;
 }
 
 
-.leaflet-download-button:hover {
+.chart-swiper-button:hover {
     background: #ebebeb;
     color: currentColor;
 }
 
 @media (max-width: 768px) {
-    .leaflet-download-button {
-        top: 140px;
+    .chart-swiper-button {
+        position: relative;
+        margin-top: 54px;
     }
 }

@@ -21,6 +21,7 @@ import MapLabels from "../components/MapLabels";
 import HeatmapController from "../components/HeatmapController";
 import LeftControlsController from "../components/LeftControlsController";
 import RightControlsController from "../components/RightControlsController";
+import SideChartSwiper from "../components/SideChartSwiper";
 
 import { useAvailableDates, useLatestDate, useForecastSteps } from "../hooks/useFireIndex";
 
@@ -28,6 +29,7 @@ import { useAvailableDates, useLatestDate, useForecastSteps } from "../hooks/use
 const Home: React.FC = () => {
     const [indexName, setIndexName] = useState<"pof" | "fopi">("pof");
     const [mode, setMode] = useState<"by_date" | "by_forecast">("by_date");
+    const [chartsOpen, setChartsOpen] = useState(false);
 
     const availableDates = useAvailableDates(indexName);
     const latest = useLatestDate(indexName);
@@ -150,6 +152,7 @@ const Home: React.FC = () => {
                         mode={mode}
                         baseTime={baseTime ?? null}
                         forecastTime={(selectedForecastTimeLocal ?? selectedForecastTime) ?? null}
+                        onOpenCharts={() => setChartsOpen(true)}
                     />
 
                     <MapLabels />
@@ -180,6 +183,8 @@ const Home: React.FC = () => {
                     />
                 </MapContainer>
             </div>
+
+            <SideChartSwiper opened={chartsOpen} onClose={() => setChartsOpen(false)} />
         </>
     );
 };
