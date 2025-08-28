@@ -21,11 +21,12 @@ src/
 │  
 ├── components/  
 │   ├── ByModeInfoPopover.tsx         # Info tooltip explaining the "by date"/"by forecast" toggle  
-│   ├── ByModeToggle.tsx              # Mantine SegmentedControl to toggle between "by date" and "by forecast" modes  
+│   ├── ByModeToggle.tsx              # Mantine SegmentedControl to toggle between "by date" and "by forecast" modes   
+│   ├── ChartSwiperControl.tsx        # Button; active a side bar containing a swiper with charts  
 │   ├── ColorBarLegend.tsx            # Dynamic color legend based on selected area     
 │   ├── ControlsController.tsx        # Contains IndexToggle, ByModeToggle, DatePicker, ForecastSelect, ForecastSlider, ColorBarLegend 
 │   ├── DatePicker.tsx                # Mantine DatePickerInput; allows user to pick a date or forecast initialization time  
-│   ├── DownloadButton.tsx            # Download button; allows user to download the heatmap image   
+│   ├── DownloadControl.tsx           # Download button; allows user to download the heatmap image   
 │   ├── DrawControl.tsx               # Drawing tools; allow user to select an area on the map  
 │   ├── ForecastSelect.tsx            # Mantine Select; lets user pick a forecast valid time (in "by date" mode)    
 │   ├── ForecastSlider.tsx            # Mantine Slider; lets user slide between forecast steps (in "by forecast" mode), shows start/end dates below slider  
@@ -37,7 +38,8 @@ src/
 │   ├── LocationSearch.tsx            # Leaflet search input by location  
 │   ├── LogoContainer.tsx             # App and ECMWF logos   
 │   ├── MapLabels.tsx                 # To have map labels over the heatmap image   
-│   └── ResetViewControl.tsx          # Reset the map at the initial zoom and position   
+│   └── ResetViewControl.tsx          # Reset the map at the initial zoom and position    
+│   └── TooltipControl.tsx            # Button; active a tooltip with info about the selected coordinates       
 │  
 ├── hooks/  
 │   └── useFireIndex.ts               # Custom React hooks that wrap fireIndexApi calls and manage request state     

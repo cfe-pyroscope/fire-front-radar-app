@@ -12,13 +12,15 @@
 
 .leaflet-control-zoom {
     top: 40px;
-    left: 10px;
+    left: 0;
 }
 
 .leaflet-draw.leaflet-control {
     top: 100px;
-    left: 10px;
+    left: 0;
 }
+
+
 
 .leaflet-touch .leaflet-control-layers,
 .leaflet-touch .leaflet-bar {
@@ -35,5 +37,9 @@
 
     .leaflet-draw.leaflet-control {
         top: 100px;
+    }
+
+    .leaflet-download-button.leaflet-control {
+        margin-top: 15px;
     }
 }

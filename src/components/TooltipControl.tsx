@@ -135,7 +135,7 @@ const TooltipControl = ({ indexName, baseTime, forecastTime, mode }: Props) => {
               <div class="tip-title">
                 <span class="flame" aria-hidden="true">🔥</span>
                 <span class="index">${data.index.toUpperCase()}</span>
-                <span class="param">· RISK</span>
+                <span class="param">· FIRE RISK</span>
               </div>
               <div class="chip" style="--chip-bg:${bg};--chip-fg:${fg}" title="${v ?? "N/A"}">
                 ${lbl}
