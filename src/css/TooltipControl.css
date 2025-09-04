@@ -162,6 +162,10 @@
     color: #f3f4f6;
 }
 
+.value {
+    text-align: right;
+}
+
 @media (max-width: 768px) {
     .tooltip-control-content {
         position: relative;
