@@ -19,26 +19,30 @@ src/
 │  
 ├── assets/                           # images   
 │  
-├── components/  
+├── components/    
+│   ├── AreaSelect.tsx                # Drawing tools; allow user to select an area on the map 
 │   ├── ByModeInfoPopover.tsx         # Info tooltip explaining the "by date"/"by forecast" toggle  
 │   ├── ByModeToggle.tsx              # Mantine SegmentedControl to toggle between "by date" and "by forecast" modes   
 │   ├── ChartSwiperControl.tsx        # Button; active a side bar containing a swiper with charts  
+│   ├── ChartTimeSeries.tsx           # Chart; Time series of fopi or pof value for a selected area 
 │   ├── ColorBarLegend.tsx            # Dynamic color legend based on selected area     
 │   ├── ControlsController.tsx        # Contains IndexToggle, ByModeToggle, DatePicker, ForecastSelect, ForecastSlider, ColorBarLegend 
 │   ├── DatePicker.tsx                # Mantine DatePickerInput; allows user to pick a date or forecast initialization time  
-│   ├── DownloadControl.tsx           # Download button; allows user to download the heatmap image   
-│   ├── DrawControl.tsx               # Drawing tools; allow user to select an area on the map  
+│   ├── DownloadControl.tsx           # Download button; allows user to download the heatmap image      
 │   ├── ForecastSelect.tsx            # Mantine Select; lets user pick a forecast valid time (in "by date" mode)    
 │   ├── ForecastSlider.tsx            # Mantine Slider; lets user slide between forecast steps (in "by forecast" mode), shows start/end dates below slider  
 │   ├── HeatmapController.tsx         # Fetches metadata & forecast steps; renders select/slider based on mode and passes props to HeatmapOverlay    
 │   ├── HeatmapOverlay.tsx            # Renders Leaflet ImageOverlay for fire data from NetCDF backend
 │   ├── IndexInfoPopover.tsx          # Info tooltip containing explanations about "fopi" and "pof" indexes    
-│   ├── IndexToggle.tsx               # Mantine SegmentedControl to toggle between "fopi" and "pof" indexes     
+│   ├── IndexToggle.tsx               # Mantine SegmentedControl to toggle between "fopi" and "pof" indexes  
+│   └── LeftControlsController.tsx   # Container for the control elements on the left side           
 │   ├── Loader.tsx                    # Mantine Loader while data and heatmap are loaded   
 │   ├── LocationSearch.tsx            # Leaflet search input by location  
 │   ├── LogoContainer.tsx             # App and ECMWF logos   
 │   ├── MapLabels.tsx                 # To have map labels over the heatmap image   
 │   └── ResetViewControl.tsx          # Reset the map at the initial zoom and position    
+│   └── RightControlsController.tsx   # Container for the control elements on the right side              
+│   └── SideChartSwiper.tsx           # Vertical carousel on the left, containing charts             
 │   └── TooltipControl.tsx            # Button; active a tooltip with info about the selected coordinates       
 │  
 ├── hooks/  
@@ -55,6 +59,8 @@ src/
 │  
 ├── utils/  
 │   └── config.ts                     # Base API URL and environment config  
+│   └── date.ts                       # Format dates 
+│   └── days.ts                       # Sets up Day.js with the utc plugin  
 │   
 ├── main.tsx                          # Entry point; ReactDOM render, wraps app with MantineProvider and Router  
 

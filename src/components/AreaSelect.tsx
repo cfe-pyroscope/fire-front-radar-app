@@ -4,13 +4,13 @@ import { LatLngBounds } from 'leaflet';
 import L from 'leaflet';
 import 'leaflet-draw';
 import 'leaflet-draw/dist/leaflet.draw.css';
-import '../css/DrawControl.css';
+import '../css/AreaSelect.css';
 
-interface DrawControlProps {
+interface AreaSelectProps {
     onDrawComplete: (bounds: LatLngBounds) => void;
 }
 
-const DrawControl: React.FC<DrawControlProps> = ({ onDrawComplete }) => {
+const AreaSelect: React.FC<AreaSelectProps> = ({ onDrawComplete }) => {
     const map = useMap();
     const drawnItemsRef = useRef<L.FeatureGroup>(new L.FeatureGroup());
 
@@ -21,7 +21,7 @@ const DrawControl: React.FC<DrawControlProps> = ({ onDrawComplete }) => {
         const drawnItems = drawnItemsRef.current;
         map.addLayer(drawnItems);
 
-        const drawControl = new L.Control.Draw({
+        const AreaSelect = new L.Control.Draw({
             position: 'topleft',
             draw: {
                 rectangle: {
@@ -45,7 +45,7 @@ const DrawControl: React.FC<DrawControlProps> = ({ onDrawComplete }) => {
             },
         });
 
-        map.addControl(drawControl);
+        map.addControl(AreaSelect);
 
         const onDrawCreated = (e: L.DrawEvents.Created) => {
             const layer = e.layer;
@@ -104,7 +104,7 @@ const DrawControl: React.FC<DrawControlProps> = ({ onDrawComplete }) => {
         return () => {
             map.off(L.Draw.Event.CREATED, onDrawCreated);
             // map.off('click', onMapClick); // add the click listener
-            map.removeControl(drawControl);
+            map.removeControl(AreaSelect);
             map.removeLayer(drawnItems);
         };
     }, [map, onDrawComplete]);
@@ -112,4 +112,4 @@ const DrawControl: React.FC<DrawControlProps> = ({ onDrawComplete }) => {
     return null;
 };
 
-export default DrawControl;
+export default AreaSelect;

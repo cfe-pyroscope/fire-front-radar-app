@@ -1,7 +1,10 @@
-import { Drawer, Box, Paper, Stack, ActionIcon, rem } from "@mantine/core";
+import { Drawer, Box, Paper, Stack, ActionIcon } from "@mantine/core";
 import { Carousel } from "@mantine/carousel";
 import { IconX } from "@tabler/icons-react";
+import ChartTimeSeries from "../components/ChartTimeSeries";
+
 import "@mantine/carousel/styles.css";
+import "../css/SideChartSwiper.css";
 
 type Props = {
     opened: boolean;
@@ -9,7 +12,7 @@ type Props = {
     size?: number | string;
 };
 
-export default function SideChartSwiper({ opened, onClose, size = 380 }: Props) {
+export default function SideChartSwiper({ opened, onClose, size }: Props) {
     const slides = Array.from({ length: 5 }, (_, i) => i + 1);
 
     return (
@@ -17,50 +20,47 @@ export default function SideChartSwiper({ opened, onClose, size = 380 }: Props) 
             opened={opened}
             onClose={onClose}
             position="left"
-            size={size}
+            // Size driven by CSS var; prop must still be present to avoid Mantine defaults.
+            size={size ?? "var(--drawer-size)"}
             withCloseButton={false}
             padding="sm"
-            overlayProps={{ opacity: 0 }} // transparent overlay
+            overlayProps={{ opacity: 0 }}
+            className="sideChartSwiper"
             styles={{
-                content: {
-                    backgroundColor: "transparent", // transparent drawer background
-                    boxShadow: "none",
-                    padding: 0,
-                },
-                body: {
-                    height: "100%",
-                    padding: 12,
-                },
+                content: { backgroundColor: "transparent", boxShadow: "none", padding: 0 },
+                body: { overflow: "hidden" }, // height handled in CSS
             }}
             zIndex={500}
         >
             {/* Close */}
-            <Box pos="absolute" top={8} right={8} style={{ zIndex: 1 }}>
+            <Box className="sideChartSwiper__close">
                 <ActionIcon variant="light" aria-label="Close charts" onClick={onClose}>
-                    <IconX size={16} />
+                    <IconX size={20} />
                 </ActionIcon>
             </Box>
 
-            {/* Vertical swiper */}
+            {/* Vertical carousel */}
             <Carousel
                 orientation="vertical"
-                height="100%"
-                slideGap="md"
+                className="sideChartSwiper__carousel"
                 withIndicators
-                styles={{
-                    viewport: { height: "100%", background: "transparent" },
-                    container: { height: "100%" },
-                    indicator: { width: rem(6), height: rem(6) },
-                }}
+                slideGap="md"
+                align="start"
+                height="100%"                  // fills Drawer body
+                slideSize="var(--slide-size)"  // height of each slide
             >
                 {slides.map((n) => (
                     <Carousel.Slide key={n}>
-                        {/* White slide content */}
-                        <Paper shadow="md" p="md" radius="md" withBorder style={{ background: "white", minHeight: 260 }}>
-                            <Stack gap="xs">
-                                <strong>Chart {n}</strong>
-                                {/* drop your chart here */}
-                                <Box style={{ height: 200 }} />
+                        <Paper className="sideChartSwiper__card" withBorder>
+                            <Stack className="sideChartSwiper__stack" gap="xs">
+                                {n === 1 ? (
+                                    <ChartTimeSeries />
+                                ) : (
+                                    <>
+                                        <strong>Chart {n}</strong>
+                                        <Box className="sideChartSwiper__filler" />
+                                    </>
+                                )}
                             </Stack>
                         </Paper>
                     </Carousel.Slide>

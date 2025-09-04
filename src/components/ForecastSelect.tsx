@@ -14,7 +14,7 @@ interface ForecastSelectProps {
     onChange: (forecastTimeIso: string) => void; // send ISO back up for API usage
 }
 
-/** Format like "20 Jul, 2025 00:00" in UTC */
+/** Format like "20 Jul, 2025" in UTC */
 const formatForecastLabel = (iso: string) => formatDate(iso, "UTC");
 
 const ForecastSelect: React.FC<ForecastSelectProps> = ({
@@ -78,8 +78,8 @@ const ForecastSelect: React.FC<ForecastSelectProps> = ({
     return (
         <div className="forecast-select">
             <Select
-                label="Forecast time"
-                placeholder="Select forecast time"
+                label="Forecast date"
+                placeholder="Select forecast date"
                 value={selectedForecastTime ?? undefined}
                 onChange={(val) => {
                     if (val) {

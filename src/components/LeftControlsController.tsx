@@ -4,7 +4,7 @@ import { LatLngBounds } from "leaflet";
 
 import LocationSearch from "./LocationSearch";
 import ResetViewControl from "./ResetViewControl";
-import DrawControl from "./DrawControl";
+import AreaSelect from "./AreaSelect";
 import DownloadControl from "./DownloadControl";
 import TooltipControl from "./TooltipControl";
 import ChartSwiperControl from "./ChartSwiperControl";
@@ -38,7 +38,7 @@ const LeftControlsController: React.FC<Props> = ({
         <>
             <LocationSearch />
             <ResetViewControl />
-            <DrawControl onDrawComplete={onDrawComplete} />
+            <AreaSelect onDrawComplete={onDrawComplete} />
             <DownloadControl />
             {canShowTooltip && (
                 <TooltipControl
