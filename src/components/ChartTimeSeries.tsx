@@ -1,4 +1,6 @@
+// ChartTimeSeries.tsx — fixed
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { getTimeSeries } from "../api/fireIndexApi";
 import * as echarts from 'echarts';
 import type { EChartsOption } from 'echarts';
 import {
@@ -22,7 +24,7 @@ type TimeSeriesByBaseTime = {
     index: 'pof' | 'fopi';
     mode: 'by_base_time';
     stat: ['mean', 'median'] | string[];
-    bbox_epsg3857: string | null;
+    bbox?: string | null; // EPSG:3857 "minX,minY,maxX,maxY" or null for global
     timestamps: string[];
     mean: (number | null)[];
     median: (number | null)[];
@@ -30,23 +32,14 @@ type TimeSeriesByBaseTime = {
 
 // --- Props -------------------------------------------------------------------
 type Props = {
-    apiBase?: string; // default: http://127.0.0.1:8090/api
     index?: 'pof' | 'fopi';
-    /** bbox in EPSG:3857 as 'x_min,y_min,x_max,y_max' (URL encoded ok). If omitted, backend should use its default/global. */
-    bbox?: string | null;
+    bbox?: string | null; // EPSG:3857 "minX,minY,maxX,maxY" (unencoded)
 };
 
 const defaultProps: Required<Props> = {
-    apiBase: 'http://127.0.0.1:8090/api',
     index: 'pof',
-    bbox: '1386873.4412062382%2C4377089.987722335%2C1780982.759044607%2C4632389.662194825',
+    bbox: null,
 };
-
-function buildUrl(apiBase: string, index: 'pof' | 'fopi', bbox: string | null) {
-    const params = new URLSearchParams();
-    if (bbox) params.set('bbox', bbox);
-    return `${apiBase}/${index}/time_series?${params.toString()}`;
-}
 
 const toNiceDateShort = (iso: string) =>
     new Date(iso).toLocaleString(undefined, {
@@ -57,12 +50,11 @@ const toNiceDateShort = (iso: string) =>
 const ChartTimeSeries: React.FC<Props> = (props) => {
     const merged = { ...defaultProps, ...props };
 
-    // Controls that affect URL
+    // Controls that affect fetching
     const [indexSel, setIndexSel] = useState<'pof' | 'fopi'>(merged.index);
     const [bboxSel, setBboxSel] = useState<string>(merged.bbox ?? '');
 
-    // Data state
-    const [apiUrl, setApiUrl] = useState(() => buildUrl(merged.apiBase, indexSel, bboxSel || null));
+    // Data / network state
     const [data, setData] = useState<TimeSeriesByBaseTime | null>(null);
     const [loading, setLoading] = useState(false);
     const [err, setErr] = useState<string | null>(null);
@@ -71,47 +63,35 @@ const ChartTimeSeries: React.FC<Props> = (props) => {
     const [seriesMode, setSeriesMode] = useState<'both' | 'mean' | 'median'>('both');
     const [smooth, setSmooth] = useState(true);
     const [area, setArea] = useState(true);
-    const [sampling, setSampling] = useState<'lttb' | 'none'>('lttb');
+    const [sampling] = useState<'lttb' | 'none'>('lttb'); // keep UI off for now
 
-    // Rebuild URL when inputs change
+    // Keep internal controls in sync with incoming props if they change
     useEffect(() => {
-        setApiUrl(buildUrl(merged.apiBase, indexSel, bboxSel || null));
-    }, [merged.apiBase, indexSel, bboxSel]);
+        setIndexSel(merged.index);
+        setBboxSel(merged.bbox ?? '');
+    }, [merged.index, merged.bbox]);
 
     // --- Fetch data ------------------------------------------------------------
     useEffect(() => {
-        let aborted = false;
-        const ac = new AbortController();
-
+        const abort = new AbortController();
         setLoading(true);
         setErr(null);
-        setData(null);
 
-        fetch(apiUrl, { signal: ac.signal })
-            .then(async (r) => {
-                if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
-                return r.json() as Promise<TimeSeriesByBaseTime>;
-            })
-            .then((json) => {
-                if (aborted) return;
-                if (json.mode !== 'by_base_time') {
-                    throw new Error(`Unexpected mode: ${json.mode}. Expected "by_base_time".`);
-                }
-                console.log("API response data:", json);
-                setData(json);
+        getTimeSeries(indexSel, bboxSel || null, abort.signal)
+            .then((res) => {
+                setData(res as TimeSeriesByBaseTime);
             })
             .catch((e) => {
-                if (!aborted) setErr(e?.message ?? String(e));
+                if (abort.signal.aborted) return;
+                setErr(e?.message ?? 'Failed to load time series');
+                setData(null);
             })
             .finally(() => {
-                if (!aborted) setLoading(false);
+                if (!abort.signal.aborted) setLoading(false);
             });
 
-        return () => {
-            aborted = true;
-            ac.abort();
-        };
-    }, [apiUrl]);
+        return () => abort.abort();
+    }, [indexSel, bboxSel]);
 
     // --- ECharts setup ---------------------------------------------------------
     const chartRef = useRef<HTMLDivElement | null>(null);
@@ -137,11 +117,7 @@ const ChartTimeSeries: React.FC<Props> = (props) => {
         const mean = data?.mean ?? [];
         const median = data?.median ?? [];
 
-        const areaStyle = area
-            ? {
-                areaStyle: { opacity: 0.25 },
-            }
-            : {};
+        const areaStyle = area ? { areaStyle: { opacity: 0.25 } } : {};
 
         const common = {
             type: 'line' as const,
@@ -154,31 +130,19 @@ const ChartTimeSeries: React.FC<Props> = (props) => {
 
         const series: any[] = [];
         if (seriesMode === 'both' || seriesMode === 'mean') {
-            series.push({
-                name: 'Mean',
-                data: mean,
-                ...common,
-            });
+            series.push({ name: 'Mean', data: mean, ...common });
         }
         if (seriesMode === 'both' || seriesMode === 'median') {
-            series.push({
-                name: 'Median',
-                data: median,
-                ...common,
-            });
+            series.push({ name: 'Median', data: median, ...common });
         }
 
-        const title = `${data?.index?.toUpperCase() ?? 'POF'} • By Base Time`;
+        const title = `${data?.index?.toUpperCase() ?? indexSel.toUpperCase()} • By Base Time`;
 
         const opt: EChartsOption = {
-            title: {
-                left: 'center',
-                text: title,
-            },
+            title: { left: 'center', text: title },
             tooltip: {
                 trigger: 'axis',
-                valueFormatter: (val) =>
-                    typeof val === 'number' ? val.toFixed(6) : (val as any) ?? '',
+                valueFormatter: (val) => (typeof val === 'number' ? val.toFixed(6) : (val as any) ?? ''),
             },
             legend: { top: 50 },
             toolbox: {
@@ -194,27 +158,20 @@ const ChartTimeSeries: React.FC<Props> = (props) => {
                 type: 'category',
                 boundaryGap: false,
                 data: timestamps,
-                axisLabel: {
-                    formatter: (iso: string) => toNiceDateShort(iso),
-                },
+                axisLabel: { formatter: (iso: string) => toNiceDateShort(iso) },
             },
             yAxis: {
                 type: 'value',
                 name: indexSel === 'pof' ? 'POF' : 'FOPI',
                 min: 0,
                 max: (val: any) => Math.max(1e-6, Number(val.max) * 1.2),
-                axisLabel: {
-                    formatter: (val: number) => val.toFixed(3)
-                }
+                axisLabel: { formatter: (val: number) => val.toFixed(3) },
             },
-            dataZoom: [
-                { type: 'inside', start: 0, end: 100 },
-                { start: 0, end: 100 },
-            ],
+            dataZoom: [{ type: 'inside', start: 0, end: 100 }, { start: 0, end: 100 }],
             series,
         };
         return opt;
-    }, [data, seriesMode, smooth, area, sampling]);
+    }, [data, seriesMode, smooth, area, sampling, indexSel]);
 
     useEffect(() => {
         if (!echartsRef.current) return;
@@ -224,35 +181,24 @@ const ChartTimeSeries: React.FC<Props> = (props) => {
     return (
         <Stack p="md" gap="md">
             <Title order={3}>Fire Danger Time Series</Title>
-            <Text size="sm" c="dimmed">
-                Explanation of the chart
-            </Text>
+            <Text size="sm" c="dimmed">Explanation of the chart</Text>
 
             <Card withBorder>
                 <Stack gap="xs">
                     <Group gap="md" wrap="wrap">
-                        <Select
-                            label="Index"
+                        <SegmentedControl
                             value={indexSel}
                             onChange={(v) => setIndexSel((v as 'pof' | 'fopi') ?? 'pof')}
                             data={[
                                 { value: 'pof', label: 'POF' },
                                 { value: 'fopi', label: 'FOPI' },
                             ]}
-                            w={260}
+                            size="sm"          // tweak: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+                            radius="md"        // tweak corner radius
+                            fullWidth={false}  // set to true to stretch
+                            style={{ width: 120 }} // optional fixed width, or remove to autosize
                         />
 
-                        <MantineTooltip label="EPSG:3857 bbox">
-                            <Code
-                                miw={220}
-                                style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-                            >
-                                bbox: {bboxSel || 'global'}
-                            </Code>
-                        </MantineTooltip>
-                    </Group>
-
-                    <Group gap="md" wrap="wrap">
                         <SegmentedControl
                             value={seriesMode}
                             onChange={(v) => setSeriesMode(v as any)}
@@ -262,26 +208,10 @@ const ChartTimeSeries: React.FC<Props> = (props) => {
                                 { value: 'median', label: 'Median only' },
                             ]}
                         />
-                        <Switch
-                            checked={smooth}
-                            onChange={(e) => setSmooth(e.currentTarget.checked)}
-                            label="Smooth"
-                        />
-                        <Switch
-                            checked={area}
-                            onChange={(e) => setArea(e.currentTarget.checked)}
-                            label="Area fill"
-                        />
-                        {/* to be decide if we want to implement or
-                        <SegmentedControl
-                            value={sampling}
-                            onChange={(v) => setSampling(v as any)}
-                            data={[
-                                { value: 'lttb', label: 'Sampling: LTTB' },
-                                { value: 'none', label: 'Sampling: none' },
-                            ]}
-                        /> */}
-                        <Button
+                        <Switch checked={smooth} onChange={(e) => setSmooth(e.currentTarget.checked)} label="Smooth" />
+                        <Switch checked={area} onChange={(e) => setArea(e.currentTarget.checked)} label="Area fill" />
+
+                        {/* <Button
                             variant="light"
                             onClick={() => {
                                 if (!echartsRef.current) return;
@@ -289,7 +219,7 @@ const ChartTimeSeries: React.FC<Props> = (props) => {
                             }}
                         >
                             Reset view
-                        </Button>
+                        </Button> */}
                     </Group>
                 </Stack>
             </Card>
@@ -312,9 +242,20 @@ const ChartTimeSeries: React.FC<Props> = (props) => {
                 )}
                 <div ref={chartRef} style={{ width: '100%', height: '100%' }} />
             </Card>
+            <Text size="sm" c="dimmed">
+
+                coords: {bboxSel
+                    ? bboxSel
+                        .split(',')
+                        .map((c) => Number(c).toFixed(2))
+                        .join(', ')
+                    : 'global'}
+            </Text>
             <Space h="xs" />
         </Stack>
     );
 };
+
+ChartTimeSeries.defaultProps = defaultProps;
 
 export default ChartTimeSeries;

@@ -30,6 +30,15 @@ const Home: React.FC = () => {
     const [indexName, setIndexName] = useState<"pof" | "fopi">("pof");
     const [mode, setMode] = useState<"by_date" | "by_forecast">("by_date");
     const [chartsOpen, setChartsOpen] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth <= 768); // adjust breakpoint as needed
+        checkMobile();
+        window.addEventListener("resize", checkMobile);
+        return () => window.removeEventListener("resize", checkMobile);
+    }, []);
+
 
     const availableDates = useAvailableDates(indexName);
     const latest = useLatestDate(indexName);
@@ -87,6 +96,15 @@ const Home: React.FC = () => {
     const [isHeatmapLoading, setIsHeatmapLoading] = useState(false);
     const [scale, setScale] = useState<{ vmin: number; vmax: number } | null>(null);
 
+    const drawnBbox3857 = useMemo(() => {
+        if (!drawnBounds) return null;
+        const sw = drawnBounds.getSouthWest(); // lat,lng
+        const ne = drawnBounds.getNorthEast(); // lat,lng
+        const pSW = CRS.EPSG3857.project(sw);  // {x,y} meters
+        const pNE = CRS.EPSG3857.project(ne);  // {x,y} meters
+        return `${pSW.x},${pSW.y},${pNE.x},${pNE.y}`;
+    }, [drawnBounds]);
+
     const showControls = useMemo(
         () =>
             !metaLoading &&
@@ -105,13 +123,15 @@ const Home: React.FC = () => {
 
     return (
         <>
-            <LogoContainer
-                logo1Src={logo1}
-                logo2Src={logo2}
-                alt1="Fire Front Radar App Logo"
-                alt2="ECMWF Logo"
-                betweenText="Fire Front Radar"
-            />
+            {(!isMobile || (isMobile && !chartsOpen)) && (
+                <LogoContainer
+                    logo1Src={logo1}
+                    logo2Src={logo2}
+                    alt1="Fire Front Radar App Logo"
+                    alt2="ECMWF Logo"
+                    betweenText="Fire Front Radar"
+                />
+            )}
 
             <div className="map-container">
                 {!chartsOpen && (
@@ -156,6 +176,7 @@ const Home: React.FC = () => {
                             baseTime={baseTime ?? null}
                             forecastTime={(selectedForecastTimeLocal ?? selectedForecastTime) ?? null}
                             onOpenCharts={() => setChartsOpen(true)}
+                            isAreaSelected={!!drawnBbox3857}
                         />
                     )}
 
@@ -188,7 +209,13 @@ const Home: React.FC = () => {
                 </MapContainer>
             </div>
 
-            <SideChartSwiper opened={chartsOpen} onClose={() => setChartsOpen(false)} />
+            <SideChartSwiper
+                opened={chartsOpen}
+                onClose={() => setChartsOpen(false)}
+                indexName={indexName}
+                // prefer drawn area; SideChartSwiper can also receive a bbox from location search (below)
+                bbox={drawnBbox3857}
+            />
         </>
     );
 };

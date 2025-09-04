@@ -10,9 +10,18 @@ type Props = {
     opened: boolean;
     onClose: () => void;
     size?: number | string;
+    indexName?: 'pof' | 'fopi';
+    bbox?: string | null; // EPSG:3857 "minX,minY,maxX,maxY" or null for global
 };
 
-export default function SideChartSwiper({ opened, onClose, size }: Props) {
+
+export default function SideChartSwiper({
+    opened,
+    onClose,
+    size,
+    indexName,
+    bbox
+}: Props) {
     const slides = Array.from({ length: 5 }, (_, i) => i + 1);
 
     return (
@@ -54,7 +63,10 @@ export default function SideChartSwiper({ opened, onClose, size }: Props) {
                         <Paper className="sideChartSwiper__card" withBorder>
                             <Stack className="sideChartSwiper__stack" gap="xs">
                                 {n === 1 ? (
-                                    <ChartTimeSeries />
+                                    <ChartTimeSeries
+                                        index={indexName}
+                                        bbox={bbox}
+                                    />
                                 ) : (
                                     <>
                                         <strong>Chart {n}</strong>
