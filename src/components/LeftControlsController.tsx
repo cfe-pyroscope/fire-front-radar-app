@@ -1,4 +1,3 @@
-// src/components/LeftControlsController.tsx
 import React from "react";
 import { LatLngBounds } from "leaflet";
 
@@ -18,7 +17,8 @@ interface Props {
     mode: "by_date" | "by_forecast";
     baseTime: string | null;
     forecastTime: string | null;
-    onOpenCharts?: () => void; // NEW
+    onOpenCharts?: () => void;
+    isAreaSelected?: boolean;
 }
 
 /**
@@ -31,6 +31,7 @@ const LeftControlsController: React.FC<Props> = ({
     baseTime,
     forecastTime,
     onOpenCharts,
+    isAreaSelected = false,
 }) => {
     const canShowTooltip = Boolean(baseTime && forecastTime);
 
@@ -48,7 +49,10 @@ const LeftControlsController: React.FC<Props> = ({
                     mode={mode}
                 />
             )}
-            <ChartSwiperControl onClick={onOpenCharts} />
+            <ChartSwiperControl
+                onClick={onOpenCharts}
+                disabled={!isAreaSelected}
+            />
         </>
     );
 };

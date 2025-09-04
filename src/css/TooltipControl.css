@@ -168,7 +168,6 @@
 
 @media (max-width: 768px) {
     .tooltip-control-content {
-        position: relative;
         margin-top: 35px;
     }
 }

@@ -30,6 +30,11 @@ export interface HeatmapImageResult {
     vmax?: number;
 }
 
+export interface TimeSeriesPoint {
+    time: string;            // ISO string
+    value: number | null;    // series value
+}
+
 /** Error type */
 export class ApiError extends Error {
     status?: number;
@@ -274,4 +279,15 @@ export async function getTooltipValue(
         `&coords=${encodeURIComponent(`${coords3857.x},${coords3857.y}`)}`;
 
     return fetchJSON<TooltipResponse>(url, signal);
+}
+
+
+export async function getTimeSeries(
+    indexName: IndexName,
+    bbox?: string | null,
+    signal?: AbortSignal
+): Promise<TimeSeriesPoint[]> {
+    let url = `${API_BASE_URL}/api/${indexName}/time_series?format=json`;
+    if (bbox) url += `&bbox=${encodeURIComponent(bbox)}`;
+    return fetchJSON<TimeSeriesPoint[]>(url, signal);
 }

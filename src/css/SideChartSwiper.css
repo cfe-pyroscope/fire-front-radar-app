@@ -7,15 +7,6 @@
     --peek-amount: 120px;
 }
 
-/* Mobile override */
-@media (max-width: 62em) {
-
-    /* Mantine md ~ 992px */
-    :root {
-        --drawer-size: 100vw;
-        --peek-amount: 96px;
-    }
-}
 
 /* ====== Drawer body fills the height so percentages resolve properly ====== */
 .sideChartSwiper .mantine-Drawer-body {
@@ -73,4 +64,19 @@
 .sideChartSwiper__filler {
     flex: 1;
     min-height: 0;
+}
+
+/* Mobile override */
+@media (max-width: 62em) {
+
+    /* Mantine md ~ 992px */
+    :root {
+        --drawer-size: 100vw;
+        --peek-amount: 130px;
+    }
+
+    .mantine-Stack-root {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
 }
