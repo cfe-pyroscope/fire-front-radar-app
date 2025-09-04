@@ -1,7 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import Layout from '../layouts/Layout';
 import Home from '../pages/Home';
-import ChartTest from '../pages/ChartTest';
 
 export default function AppRoutes() {
   return (
@@ -13,7 +12,7 @@ export default function AppRoutes() {
 
       {/* Route without the Sidenav */}
       <Route path="/" element={<Home />} />
-      <Route path="/chart-test" element={<ChartTest />} />
+      {/* <Route path="/chart-test" element={<ChartTest />} /> */}
     </Routes>
   );
 }

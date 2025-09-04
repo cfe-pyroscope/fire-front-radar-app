@@ -114,22 +114,24 @@ const Home: React.FC = () => {
             />
 
             <div className="map-container">
-                <RightControlsController
-                    indexName={indexName}
-                    onIndexToggle={setIndexName}
-                    mode={mode}
-                    onModeToggle={setMode}
-                    selectedDate={selectedDate}
-                    onDateChange={handleDateChange}
-                    availableDates={availableDates}
-                    dateLabel={mode === "by_forecast" ? "Pick forecast" : "Pick date"}
-                    showControls={showControls}
-                    forecastSteps={forecastSteps}
-                    baseTime={baseTime}
-                    selectedForecastTime={(selectedForecastTimeLocal ?? selectedForecastTime)!}
-                    onForecastTimeChange={(t) => setSelectedForecastTimeLocal(t)}
-                    scale={scale}
-                />
+                {!chartsOpen && (
+                    <RightControlsController
+                        indexName={indexName}
+                        onIndexToggle={setIndexName}
+                        mode={mode}
+                        onModeToggle={setMode}
+                        selectedDate={selectedDate}
+                        onDateChange={handleDateChange}
+                        availableDates={availableDates}
+                        dateLabel={mode === "by_forecast" ? "Pick forecast" : "Pick date"}
+                        showControls={showControls}
+                        forecastSteps={forecastSteps}
+                        baseTime={baseTime}
+                        selectedForecastTime={(selectedForecastTimeLocal ?? selectedForecastTime)!}
+                        onForecastTimeChange={(t) => setSelectedForecastTimeLocal(t)}
+                        scale={scale}
+                    />
+                )}
 
                 {isHeatmapLoading && <Loader message="Loading data..." />}
                 {metaLoading && <Loader message="Loading forecast steps..." />}
@@ -146,14 +148,16 @@ const Home: React.FC = () => {
                     worldCopyJump={false}
                     style={{ height: "100%", width: "100%", zIndex: 0 }}
                 >
-                    <LeftControlsController
-                        onDrawComplete={setDrawnBounds}
-                        indexName={indexName}
-                        mode={mode}
-                        baseTime={baseTime ?? null}
-                        forecastTime={(selectedForecastTimeLocal ?? selectedForecastTime) ?? null}
-                        onOpenCharts={() => setChartsOpen(true)}
-                    />
+                    {!chartsOpen && (
+                        <LeftControlsController
+                            onDrawComplete={setDrawnBounds}
+                            indexName={indexName}
+                            mode={mode}
+                            baseTime={baseTime ?? null}
+                            forecastTime={(selectedForecastTimeLocal ?? selectedForecastTime) ?? null}
+                            onOpenCharts={() => setChartsOpen(true)}
+                        />
+                    )}
 
                     <MapLabels />
 

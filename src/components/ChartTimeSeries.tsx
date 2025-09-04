@@ -1,4 +1,3 @@
-// ChartTest.tsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as echarts from 'echarts';
 import type { EChartsOption } from 'echarts';
@@ -55,7 +54,7 @@ const toNiceDateShort = (iso: string) =>
         day: '2-digit',
     });
 
-const ChartTest: React.FC<Props> = (props) => {
+const ChartTimeSeries: React.FC<Props> = (props) => {
     const merged = { ...defaultProps, ...props };
 
     // Controls that affect URL
@@ -225,6 +224,9 @@ const ChartTest: React.FC<Props> = (props) => {
     return (
         <Stack p="md" gap="md">
             <Title order={3}>Fire Danger Time Series</Title>
+            <Text size="sm" c="dimmed">
+                Explanation of the chart
+            </Text>
 
             <Card withBorder>
                 <Stack gap="xs">
@@ -310,17 +312,9 @@ const ChartTest: React.FC<Props> = (props) => {
                 )}
                 <div ref={chartRef} style={{ width: '100%', height: '100%' }} />
             </Card>
-
-            {data && (
-                <Text size="sm" c="dimmed">
-                    Showing {data.index.toUpperCase()} • Mode: by base time
-                    {data.bbox_epsg3857 ? ` • BBOX: ${decodeURIComponent(data.bbox_epsg3857)}` : ''}
-                </Text>
-            )}
-
-            <Space h="lg" />
+            <Space h="xs" />
         </Stack>
     );
 };
 
-export default ChartTest;
+export default ChartTimeSeries;

@@ -12,14 +12,7 @@ export function formatDate(iso: string, tz: string = "UTC") {
     const month = dateParts.find(p => p.type === "month")!.value; // e.g. "Jul"
     const year = dateParts.find(p => p.type === "year")!.value;
 
-    const time = new Intl.DateTimeFormat("en-GB", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-        timeZone: tz,
-    }).format(d); // e.g. "00:00"
-
-    return `${day} ${month}, ${year} ${time}`; // "11 Jul, 2025 00:00"
+    return `${day} ${month}, ${year}`; // "11 Jul, 2025 00:00"
 }
 
 
@@ -63,8 +56,8 @@ export function formatCombinedDateTimeLabel(
             base.getUTCFullYear(),
             base.getUTCMonth(),
             base.getUTCDate(),
-            c.getUTCHours(),
-            c.getUTCMinutes(),
+            //7c.getUTCHours(),
+            // c.getUTCMinutes(),
             0,
             0
         )
@@ -74,8 +67,8 @@ export function formatCombinedDateTimeLabel(
         year: "numeric",
         month: "short",
         day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
+        //hour: "2-digit",
+        //minute: "2-digit",
         hour12: false,
         timeZone,
     });
