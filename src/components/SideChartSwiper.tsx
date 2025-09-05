@@ -65,7 +65,7 @@ export default function SideChartSwiper({
         {slides.map((n) => (
           <Carousel.Slide key={n}>
             <Paper className="sideChartSwiper__card" withBorder>
-              <Stack className="sideChartSwiper__stack" gap="xs">
+              <Stack className="sideChartSwiper__stack" gap="xs" style={{ border: 'solid 1px yellow' }}>
                 {n === 1 ? (
                   <ChartTimeSeries index={indexName} bbox={bbox} />
                 ) : (
