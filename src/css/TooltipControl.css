@@ -1,7 +1,4 @@
 .tooltip-control-content {
-    position: absolute;
-    top: 100px;
-    left: 0;
     width: 30px;
     height: 30px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
@@ -166,8 +163,4 @@
     text-align: right;
 }
 
-@media (max-width: 768px) {
-    .tooltip-control-content {
-        margin-top: 35px;
-    }
-}
+@media (max-width: 768px) {}

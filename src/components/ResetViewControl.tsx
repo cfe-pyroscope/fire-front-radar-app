@@ -14,19 +14,24 @@ const ResetViewControl = () => {
     useEffect(() => {
         const control = L.Control.extend({
             onAdd: function () {
-                const container = L.DomUtil.create('div', 'leaflet-reset-button disabled');
+                const container = L.DomUtil.create(
+                    'div',
+                    'leaflet-bar leaflet-control leaflet-reset-button disabled'
+                );
                 container.title = 'Reset view';
                 container.innerHTML = ReactDOMServer.renderToString(<IconTarget size={18} />);
                 containerRef.current = container;
 
                 container.onclick = () => {
-                    if (container.classList.contains('disabled')) {
-                        // console.log("Button is disabled");
-                        return;
-                    }
-                    // console.log("Resetting view");
+                    if (container.classList.contains('disabled')) return;
+
+                    // Reset view
                     map.setView(INITIAL_MAP_CENTER, INITIAL_MAP_ZOOM);
-                    // After reset, disable the button since we're back at initial position
+
+                    // Tell PinSelect to clear its (single) marker
+                    window.dispatchEvent(new CustomEvent('pin-clear'));
+
+                    // Disable button again (we're back to initial)
                     container.classList.add('disabled');
                     userHasInteractedRef.current = false;
                 };
@@ -41,18 +46,12 @@ const ResetViewControl = () => {
         const enableButton = () => {
             if (!userHasInteractedRef.current) {
                 userHasInteractedRef.current = true;
-                // console.log("User interacted with map - enabling reset button");
-                if (containerRef.current) {
-                    containerRef.current.classList.remove('disabled');
-                }
+                containerRef.current?.classList.remove('disabled');
             }
         };
 
-        // Enable button on any user interaction
-        map.on('movestart', enableButton);  // User starts dragging
-        map.on('zoomstart', enableButton);  // User starts zooming
-
-        // console.log("Reset button starts disabled");
+        map.on('movestart', enableButton);
+        map.on('zoomstart', enableButton);
 
         return () => {
             map.removeControl(resetControl);
