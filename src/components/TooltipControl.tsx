@@ -107,7 +107,7 @@ const TooltipControl = ({ indexName, baseTime, forecastTime, mode }: Props) => {
     useEffect(() => {
         const control = L.Control.extend({
             onAdd: function () {
-                const container = L.DomUtil.create("div", "leaflet-tooltip-button");
+                const container = L.DomUtil.create("div", "leaflet-bar leaflet-control leaflet-tooltip-button");
                 L.DomEvent.disableClickPropagation(container);
                 L.DomEvent.disableScrollPropagation(container);
 
