@@ -8,8 +8,13 @@ interface Props {
 }
 
 const HeatmapLegend: React.FC<Props> = ({ vmin, vmax, index = "" }) => {
+    /* from ECWMWF color palette */
     const colors = ["#00000000", "#fff7ec", "#fee8c8", "#fdd49e", "#fdbb84",
         "#fc8d59", "#ef6548", "#d7301f", "#b30000", "#7f0000"];
+
+    /* used for fopi and pof in echarts 
+    const colors = ["#00000000", "#E3E8DA", "#C2DBC0", "#FFBF00",
+        "#CC9A03", "#C45B2C", "#AD3822", "#951517", "#3A072C", "#0F0A0A"];*/
 
     // Format numbers based on their magnitude and index type
     const formatValue = (value: number): string => {
@@ -107,11 +112,11 @@ const HeatmapLegend: React.FC<Props> = ({ vmin, vmax, index = "" }) => {
     const getLegendDescription = (): string => {
         switch (index.toLowerCase()) {
             case 'pof':
-                return '≥ 0.05 severe fire risk';
+                return '≥ 0.045 extreme fire risk';
             case 'fopi':
-                return 'Increased fire risk';
+                return '≥ 0.08 extreme fire risk';
             default:
-                return 'Risk levels from low to high';
+                return 'Risk levels from low to extreme';
         }
     };
 
