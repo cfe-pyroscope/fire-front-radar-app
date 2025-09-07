@@ -32,20 +32,26 @@ const TooltipControl = ({ indexName, baseTime, forecastTime, mode }: Props) => {
     const lastClickLatLngRef = useRef<L.LatLng | null>(null);
 
 
-    // 10-color palette (index 0 is transparent)
+    /* from ECWMWF color palette */
     const PALETTE = [
         "#00000000", "#fff7ec", "#fee8c8", "#fdd49e", "#fdbb84",
         "#fc8d59", "#ef6548", "#d7301f", "#b30000", "#7f0000",
     ];
+
+    /*  used for fopi and pof in echarts
+    const PALETTE = [
+        "#00000000", "#E3E8DA", "#C2DBC0", "#FFBF00", "#CC9A03",
+        "#C45B2C", "#AD3822", "#951517", "#3A072C", "#0F0A0A",
+    ]; */
 
     const clamp = (n: number, a = 0, b = 1) => Math.min(b, Math.max(a, n));
 
     /** Normalize value to 0..1 based on index rules. */
     function normalize(indexName: IndexName, v: number) {
         if (indexName === "fopi") return clamp(v, 0, 1);
-        // POF: 0 == no risk; > 0.05 == high risk; scale 0..0.05 into 0..1
+        // POF: 0 == no risk; > 0.045 == high risk; scale 0..0.045 into 0..1
         if (v <= 0) return 0;
-        if (v < 0.05) return v / 0.05;
+        if (v < 0.045) return v / 0.045;
         return 1;
     }
 
@@ -70,19 +76,27 @@ const TooltipControl = ({ indexName, baseTime, forecastTime, mode }: Props) => {
     /** Label logic per index. */
     function labelFor(indexName: IndexName, v: number | null) {
         if (v == null || Number.isNaN(v)) return "";
+        if (v <= 0) return "No risk";
+        if (v > 1) v = 1;
+
         if (indexName === "fopi") {
-            if (v < 0.2) return "Low";
-            if (v < 0.4) return "Moderate";
-            if (v < 0.6) return "High";
-            if (v < 0.8) return "Very High";
+            if (v <= 0.20) return "Low";
+            if (v <= 0.40) return "Medium";
+            if (v <= 0.60) return "High";
+            if (v <= 0.80) return "Very High";
             return "Extreme";
         }
-        // POF
-        if (v == 0) return "No risk";
-        if (v < 0.05) return "Low";
-        if (v >= 0.05) return "High";
-        return "High";
+
+        // pof 
+        if (v <= 0.0025) return "Low";
+        if (v <= 0.0075) return "Medium";
+        if (v <= 0.015) return "High";
+        if (v <= 0.030) return "Very High";
+        if (v <= 0.045) return "Extreme";
+        return "Extreme";
     }
+
+
 
     /** Build a discrete gradient string from the palette for the bar. */
     function paletteGradient() {
