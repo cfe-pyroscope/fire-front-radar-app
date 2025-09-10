@@ -51,6 +51,9 @@ const LocationSearch: React.FC<Props> = ({ onSelectBounds }) => {
                     L.latLng(lat + delta, lng + delta)
                 );
 
+                window.dispatchEvent(new CustomEvent("clear-pin-selection")); // remove existing pin
+                window.dispatchEvent(new CustomEvent("clear-area-selection"));  // remove previously selected areas
+
                 onSelectBounds?.(bounds);
             } catch {
                 // swallow — this is a non-critical UX enhancement

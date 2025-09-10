@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useCallback } from "react";
 import L, { LatLngBounds } from "leaflet";
 import { useMap, useMapEvent } from "react-leaflet";
 import markerUrl from "leaflet/dist/images/marker-icon.png";
+import markerShadowUrl from "leaflet/dist/images/marker-shadow.png";
 
 type Props = {
     enabled: boolean;
@@ -11,6 +12,15 @@ type Props = {
 
 const PinSelect: React.FC<Props> = ({ enabled, onSelectBounds, deltaDeg = 0.01 }) => { // ~0.05 ≈ 5–6 km at mid-latitudes
     const map = useMap();
+
+    const pinIcon = L.icon({
+        iconUrl: markerUrl,
+        shadowUrl: markerShadowUrl,
+        iconSize: [25, 41],        // <— prevents squeeze
+        iconAnchor: [12, 41],      // tip of the pin
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+    });
 
     // Persistent group to host the (single) marker
     const groupRef = useRef<L.LayerGroup | null>(null);
@@ -29,6 +39,15 @@ const PinSelect: React.FC<Props> = ({ enabled, onSelectBounds, deltaDeg = 0.01 }
         };
     }, [map]);
 
+    // remove the current pin when an area is selected elsewhere
+    useEffect(() => {
+        const handler = () => {
+            groupRef.current?.clearLayers(); // removes any existing marker(s)
+        };
+        window.addEventListener("clear-pin-selection", handler);
+        return () => window.removeEventListener("clear-pin-selection", handler);
+    }, []);
+
     const placeMarker = useCallback(
         (latlng: L.LatLng) => {
             const group = groupRef.current;
@@ -36,7 +55,9 @@ const PinSelect: React.FC<Props> = ({ enabled, onSelectBounds, deltaDeg = 0.01 }
 
             // Ensure only one marker exists
             group.clearLayers();
-            L.marker(latlng, { icon: new L.Icon.Default() }).addTo(group);
+            L.marker(latlng, { icon: pinIcon }).addTo(group);
+
+            window.dispatchEvent(new CustomEvent("clear-area-selection"));  // remove previously selected areas
 
             // Compute a small bbox around the point
             const d = deltaDeg;
