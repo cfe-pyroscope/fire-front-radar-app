@@ -19,18 +19,57 @@ import {
   Select,
   Space,
 } from '@mantine/core';
+import HeatmapLegend from './HeatmapLegend';
+
+const defaultProps: Required<Props> = {
+  index: 'pof',
+  bbox: null,
+};
+
+type Props = {
+  index?: 'pof' | 'fopi';
+  bbox?: string | null; // EPSG:3857 "minX,minY,maxX,maxY" (unencoded)
+};
+
+type ForecastHorizonLeadTimes = {
+  bbox?: string | null; // EPSG:3857 "minX,minY,maxX,maxY" or null for global
+  pof_forecast: (number | null)[];
+  fopi_forecast: (number | null)[];
+  axes_pof: (number | null)[];
+  axes_fopi: (number | null)[];
+};
 
 const ForecastHorizonComparison: React.FC<Props> = (props) => {
-  const leadTimes = ['1h', '3h', '6h', '12h', '24h', '48h'];
-  const pofData = [92, 88, 83, 75, 60, 50];
-  const fopiData = [95, 91, 85, 80, 65, 55];
+  const merged = { ...defaultProps, ...props };
+
+  const [indexSel, setIndexSel] = useState<'pof' | 'fopi'>(merged.index);
+  const [bboxSel, setBboxSel] = useState<string>(merged.bbox ?? '');
+
+  const leadTimes = [
+    '0d',
+    '1d',
+    '2d',
+    '3d',
+    '4d',
+    '5d',
+    '6d',
+    '7d',
+    '8d',
+    '9d',
+  ];
 
   const chartRef = useRef<HTMLDivElement | null>(null);
   const echartsRef = useRef<echarts.EChartsType | null>(null);
 
-  const [data, setData] = useState<string | null>(null);
+  const [data, setData] = useState<ForecastHorizonLeadTimes | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  // Keep internal controls in sync with incoming props if they change
+  useEffect(() => {
+    setIndexSel(merged.index);
+    setBboxSel(merged.bbox ?? '');
+  }, [merged.index, merged.bbox]);
 
   // fetch data
   useEffect(() => {
@@ -38,9 +77,9 @@ const ForecastHorizonComparison: React.FC<Props> = (props) => {
     setLoading(true);
     setErr(null);
 
-    getForecastHorizon(abort.signal)
+    getForecastHorizon(indexSel, bboxSel || null, abort.signal)
       .then((res) => {
-        setData(res as string);
+        setData(res as ForecastHorizonLeadTimes);
       })
       .catch((e) => {
         if (abort.signal.aborted) return;
@@ -73,7 +112,7 @@ const ForecastHorizonComparison: React.FC<Props> = (props) => {
     const opt: EChartsOption = {
       title: {
         text: 'Forecast Horizon Comparison',
-        subtext: 'Overlay of POF and FOPI forecasts for different lead times',
+        subtext: 'POF and FOPI forecasts for different lead times',
         left: 'center',
       },
       tooltip: {
@@ -94,12 +133,27 @@ const ForecastHorizonComparison: React.FC<Props> = (props) => {
         data: leadTimes,
         name: 'Lead Time',
       },
-      yAxis: {
-        type: 'value',
-        name: 'Forecast Confidence (%)',
-        min: 0,
-        max: 100,
-      },
+      yAxis: [
+        {
+          type: 'value',
+          name: 'FOPI',
+          
+          min: data?.axes_fopi[0],
+          max: data?.axes_fopi[1],
+           axisLabel: {
+    formatter: (value) => value.toFixed(3)
+  }
+        },
+        {
+          type: 'value',
+          name: 'POF',
+          min: data?.axes_pof[0],
+          max: data?.axes_pof[1],
+           axisLabel: {
+    formatter: (value) => value.toFixed(3) 
+  }
+        },
+      ],
       series: [
         {
           name: 'POF',
@@ -107,7 +161,8 @@ const ForecastHorizonComparison: React.FC<Props> = (props) => {
           smooth: true,
           symbol: 'circle',
           symbolSize: 8,
-          data: pofData,
+          data: data?.pof_forecast,
+          yAxisIndex: 1,
         },
         {
           name: 'FOPI',
@@ -115,13 +170,14 @@ const ForecastHorizonComparison: React.FC<Props> = (props) => {
           smooth: true,
           symbol: 'diamond',
           symbolSize: 8,
-          data: fopiData,
+          data: data?.fopi_forecast,
+          yAxisIndex: 0,
         },
       ],
     };
 
     return opt;
-  }, []);
+  }, [data]);
 
   useEffect(() => {
     if (!echartsRef.current) return;
@@ -129,22 +185,25 @@ const ForecastHorizonComparison: React.FC<Props> = (props) => {
   }, [option]);
 
   console.log(chartRef);
-  console.log(data)
+  console.log(data);
+  console.log(option);
 
   return (
-    <Stack p="md" gap="md" style={{ border: 'solid 1px blue' }}>
+    <Stack p="md" gap="md">
       <Title order={3}>Forecast Horizon Comparison</Title>
-      <Text size="sm" c="dimmed">
-        Explanation of the chart
+      <Text size="sm" c="dimmed"  style={{ maxWidth: 600 }}>
+        This chart compares POF and FOPI forecast confidence across 0–9 day lead
+        times, showing how predictions change as the forecast horizon increases.
+        It highlights how confidence decays with time, helping assess
+        reliability for planning and response.
       </Text>
 
       <Card
         withBorder
         padding="xs"
-        style={{ height: 520, position: 'relative', border: 'solid 1px red' }}
+        style={{ height: 520, position: 'relative' }}
       >
-        <div ref={chartRef} style={{ width: '100%', height: '100%' }} />
-        {/* {loading && (
+        {loading && (
           <Group
             justify="center"
             align="center"
@@ -170,18 +229,10 @@ const ForecastHorizonComparison: React.FC<Props> = (props) => {
           >
             <Text c="dimmed">No data available.</Text>
           </Group>
-        )} */}
-        {/* <div ref={chartRef} style={{ width: '100%', height: '100%' }} /> */}
+        )}
+        <div ref={chartRef} style={{ width: '100%', height: '100%' }} />
       </Card>
-      {/* <Text size="sm" c="dimmed">
-        coords:{' '}
-        {bboxSel
-          ? bboxSel
-              .split(',')
-              .map((c) => Number(c).toFixed(2))
-              .join(', ')
-          : 'global'}
-      </Text> */}
+
       <Space h="xs" />
     </Stack>
   );

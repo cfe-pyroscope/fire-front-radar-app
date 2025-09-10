@@ -35,6 +35,11 @@ export interface TimeSeriesPoint {
   value: number | null; // series value
 }
 
+export interface ForecastTime {
+    time: string; // ISO string
+    value: number | null; // series value
+}
+
 /** Error type */
 export class ApiError extends Error {
   status?: number;
@@ -326,8 +331,12 @@ export async function getTimeSeries(
 }
 
 export async function getForecastHorizon(
+  indexName: IndexName,
+  bbox?: string | null,
   signal?: AbortSignal,
-): Promise<string> {
+): Promise<ForecastTime[]> {
+  console.log(indexName);
   let url = `${API_BASE_URL}/api/forecast_horizon?format=json`;
-  return fetchJSON<string>(url, signal);
+  if (bbox) url += `&bbox=${encodeURIComponent(bbox)}`;
+  return fetchJSON<ForecastTime[]>(url, signal);
 }

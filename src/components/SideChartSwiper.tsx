@@ -61,21 +61,18 @@ export default function SideChartSwiper({
         align="start"
         height="100%" // fills Drawer body
         slideSize="var(--slide-size)" // height of each slide
+        
       >
         {slides.map((n) => (
-          <Carousel.Slide key={n}>
+          <Carousel.Slide key={n} >
             <Paper className="sideChartSwiper__card" withBorder>
-              <Stack className="sideChartSwiper__stack" gap="xs" style={{ border: 'solid 1px yellow' }}>
+              <Stack
+                className="sideChartSwiper__stack"
+                gap="xs"
+              >
                 {n === 1 ? (
                   <ChartTimeSeries index={indexName} bbox={bbox} />
-                ) : (
-                  <>
-                    <strong>Chart {n}</strong>
-                    <Box className="sideChartSwiper__filler" />
-                  </>
-                )}
-
-                {n === 2 ? (
+                ) : n === 2 ? (
                   <ForecastHorizonComparison index={indexName} bbox={bbox} />
                 ) : (
                   <>
