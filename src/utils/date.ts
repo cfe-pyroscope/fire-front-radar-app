@@ -74,3 +74,16 @@ export function formatCombinedDateTimeLabel(
     });
 }
 
+export const toNiceDateShort = (iso: string) =>
+    new Date(iso).toLocaleString(undefined, {
+        month: 'short',
+        day: '2-digit',
+    });
+
+
+export const toNiceDateLong = (iso: string) =>
+    new Date(iso).toLocaleString(undefined, {
+        month: 'short',
+        day: '2-digit',
+        year: 'numeric',
+    });
