@@ -1,10 +1,19 @@
-.leaflet-marker-icon {
+/* Only affect draw/edit handles, not normal markers */
+.leaflet-container .leaflet-editing-icon {
     width: 15px !important;
     height: 15px !important;
-    margin-left: -6px !important;
-    margin-top: -6px !important;
+    margin-left: -7.5px !important;
+    /* center the 15x15 dot */
+    margin-top: -7.5px !important;
     border-radius: 50%;
     border: 2px solid #96C1FC;
     background-color: #ffffff;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* explicitly include both types of handles */
+.leaflet-container .leaflet-edit-move,
+.leaflet-container .leaflet-edit-resize {
+    width: 15px !important;
+    height: 15px !important;
 }

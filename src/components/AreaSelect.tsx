@@ -17,6 +17,16 @@ const AreaSelect: React.FC<AreaSelectProps> = ({ onDrawComplete }) => {
     L.drawLocal.draw.toolbar.buttons.rectangle = "Select a rectangular area";
     L.drawLocal.draw.toolbar.buttons.polygon = "Select a polygonal area";
 
+    // listen for "clear-area-selection" and wipe the drawn area
+    useEffect(() => {
+        const handler = () => {
+            drawnItemsRef.current?.clearLayers();
+        };
+        window.addEventListener("clear-area-selection", handler);
+        return () => window.removeEventListener("clear-area-selection", handler);
+    }, []);
+
+
     useEffect(() => {
         const drawnItems = drawnItemsRef.current;
         map.addLayer(drawnItems);
@@ -29,65 +39,52 @@ const AreaSelect: React.FC<AreaSelectProps> = ({ onDrawComplete }) => {
                     shapeOptions: {
                         color: '#96C1FC',
                         weight: 2,
-                        fillOpacity: 0.2,
+                        fillOpacity: 0.2, // filled while drawing
+                        // (leave fill=true default)
                     },
                 },
-                polygon: true,
+                polygon: {
+                    showArea: false,
+                    shapeOptions: {
+                        color: '#96C1FC',
+                        weight: 2,
+                        fillOpacity: 0.2, // filled while drawing
+                    },
+                },
                 circle: false,
                 polyline: false,
                 marker: false,
                 circlemarker: false,
             },
-            edit: {
-                featureGroup: drawnItems,
-                edit: false,
-                remove: false,
-            },
+            edit: { featureGroup: drawnItems, edit: false, remove: false },
         });
 
         map.addControl(AreaSelect);
 
         const onDrawCreated = (e: L.DrawEvents.Created) => {
-            const layer = e.layer;
+            const layer = e.layer as L.Rectangle | L.Polygon;
 
-            // Clear any existing drawn items before adding the new one
+            const drawnItems = drawnItemsRef.current;
+
+            // keep only one area
             drawnItems.clearLayers();
 
-            if (e.layerType === 'rectangle' && layer instanceof L.Rectangle) {
-                const bounds = layer.getBounds();
-                // console.log('Rectangle bounds:', bounds.toBBoxString());
+            // add the new one
+            drawnItems.addLayer(layer);
 
-                // Add the layer temporarily to show the selection
-                drawnItems.addLayer(layer);
+            // switch to outline-only AFTER the draw completes
+            layer.setStyle({ fill: false, fillOpacity: 0 });
 
-                // Fit bounds and then clear the selection after zoom completes
-                map.fitBounds(bounds, { padding: [20, 20] });
+            window.dispatchEvent(new CustomEvent("clear-pin-selection")); // remove existing pin
 
-                // Clear the drawn item after a short delay to let the zoom complete
-                setTimeout(() => {
-                    drawnItems.clearLayers();
-                }, 500);
+            // keep the outline above overlays
+            if ((layer as any).bringToFront) (layer as any).bringToFront();
 
-                onDrawComplete(bounds);
-            } else if (e.layerType === 'polygon' && layer instanceof L.Polygon) {
-                const bounds = layer.getBounds();
-                // console.log('Polygon bounds:', bounds.toBBoxString());
+            // keep your bounds logic
+            const bounds = layer.getBounds();
+            map.fitBounds(bounds, { padding: [20, 20] });
 
-                // Add the layer temporarily to show the selection
-                drawnItems.addLayer(layer);
-
-                // Fit bounds and then clear the selection after zoom completes
-                map.fitBounds(bounds, { padding: [20, 20] });
-
-                // Clear the drawn item after a short delay to let the zoom complete
-                setTimeout(() => {
-                    drawnItems.clearLayers();
-                }, 500);
-
-                onDrawComplete(bounds);
-            } else {
-                console.warn('⚠️ Unknown layer type:', e.layerType);
-            }
+            onDrawComplete(bounds);
         };
 
         // Clear drawn items when map is clicked (outside of drawing mode)
