@@ -1,7 +1,6 @@
 import React from "react";
 import "../css/HeatmapLegend.css";
 import type { IndexType } from "../utils/legend";
-
 import {
     computeLegendLabels,
     formatLegendValue,
