@@ -11,7 +11,7 @@ type Props = {
     onClose: () => void;
     size?: number | string;
     indexName?: 'pof' | 'fopi';
-    bbox?: string | null; // EPSG:3857 "minX,minY,maxX,maxY" or null for global
+    bbox?: string | null; // EPSG:3857 "minX,minY,maxX,maxY" or null
 };
 
 
