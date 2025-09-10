@@ -213,7 +213,6 @@ const Home: React.FC = () => {
                 opened={chartsOpen}
                 onClose={() => setChartsOpen(false)}
                 indexName={indexName}
-                // prefer drawn area; SideChartSwiper can also receive a bbox from location search (below)
                 bbox={drawnBbox3857}
             />
         </>

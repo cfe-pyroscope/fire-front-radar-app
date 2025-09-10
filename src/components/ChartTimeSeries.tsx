@@ -1,4 +1,3 @@
-// ChartTimeSeries.tsx — fixed
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { getTimeSeries } from "../api/fireIndexApi";
 import * as echarts from 'echarts';
@@ -24,7 +23,8 @@ type TimeSeriesByBaseTime = {
     index: 'pof' | 'fopi';
     mode: 'by_base_time';
     stat: ['mean', 'median'] | string[];
-    bbox?: string | null; // EPSG:3857 "minX,minY,maxX,maxY" or null for global
+    bbox?: string | null; // EPSG:3857 "minX,minY,maxX,maxY" or null
+    bbox_epsg4326?: [number, number, number, number]; // [lon_min, lat_min, lon_max, lat_max]
     timestamps: string[];
     mean: (number | null)[];
     median: (number | null)[];
@@ -36,10 +36,6 @@ type Props = {
     bbox?: string | null; // EPSG:3857 "minX,minY,maxX,maxY" (unencoded)
 };
 
-const defaultProps: Required<Props> = {
-    index: 'pof',
-    bbox: null,
-};
 
 const toNiceDateShort = (iso: string) =>
     new Date(iso).toLocaleString(undefined, {
@@ -47,12 +43,11 @@ const toNiceDateShort = (iso: string) =>
         day: '2-digit',
     });
 
-const ChartTimeSeries: React.FC<Props> = (props) => {
-    const merged = { ...defaultProps, ...props };
+const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
 
     // Controls that affect fetching
-    const [indexSel, setIndexSel] = useState<'pof' | 'fopi'>(merged.index);
-    const [bboxSel, setBboxSel] = useState<string>(merged.bbox ?? '');
+    const [indexSel, setIndexSel] = useState<'pof' | 'fopi'>(index);
+    const [bboxSel, setBboxSel] = useState<string>(bbox ?? '');
 
     // Data / network state
     const [data, setData] = useState<TimeSeriesByBaseTime | null>(null);
@@ -67,9 +62,9 @@ const ChartTimeSeries: React.FC<Props> = (props) => {
 
     // Keep internal controls in sync with incoming props if they change
     useEffect(() => {
-        setIndexSel(merged.index);
-        setBboxSel(merged.bbox ?? '');
-    }, [merged.index, merged.bbox]);
+        setIndexSel(index);
+        setBboxSel(bbox ?? '');
+    }, [index, bbox]);
 
     // --- Fetch data ------------------------------------------------------------
     useEffect(() => {
@@ -178,6 +173,35 @@ const ChartTimeSeries: React.FC<Props> = (props) => {
         echartsRef.current.setOption(option, { notMerge: true, lazyUpdate: true });
     }, [option]);
 
+    const dms = (v: number, pos: string, neg: string, digits = 2) =>
+        `${Math.abs(v).toFixed(digits)}°${v >= 0 ? pos : neg}`;
+
+    const niceGeo = (
+        geo?: [number, number] | [number, number, number, number] | null,
+        bbox3857?: string | null
+    ) => {
+        if (Array.isArray(geo)) {
+            // Point: [lon, lat]
+            if (geo.length === 2) {
+                const [lon, lat] = geo;
+                return `Point: ${dms(lat, 'N', 'S')}, ${dms(lon, 'E', 'W')}`;
+            }
+            // BBox: [minLon, minLat, maxLon, maxLat]
+            if (geo.length === 4) {
+                const [minLon, minLat, maxLon, maxLat] = geo;
+                return `Area (SW → NE): ${dms(minLat, 'N', 'S')}, ${dms(minLon, 'E', 'W')} → ${dms(
+                    maxLat,
+                    'N',
+                    'S'
+                )}, ${dms(maxLon, 'E', 'W')}`;
+            }
+        }
+        // Fallback to the old EPSG:3857 bbox string (meters)
+        if (bbox3857) return `Area (meters): ${bbox3857}`;
+        return '';
+    };
+
+
     return (
         <Stack p="md" gap="md">
             <Title order={3}>Fire Danger Time Series</Title>
@@ -243,19 +267,12 @@ const ChartTimeSeries: React.FC<Props> = (props) => {
                 <div ref={chartRef} style={{ width: '100%', height: '100%' }} />
             </Card>
             <Text size="sm" c="dimmed">
-
-                coords: {bboxSel
-                    ? bboxSel
-                        .split(',')
-                        .map((c) => Number(c).toFixed(2))
-                        .join(', ')
-                    : 'global'}
+                {niceGeo(data?.bbox_epsg4326 as any, bboxSel)}
             </Text>
+
             <Space h="xs" />
         </Stack>
     );
 };
-
-ChartTimeSeries.defaultProps = defaultProps;
 
 export default ChartTimeSeries;
