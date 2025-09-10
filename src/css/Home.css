@@ -1,6 +1,5 @@
 .map-container {
     height: 100vh;
-   
     position: relative;
 }
 
@@ -10,20 +9,84 @@
     position: relative;
 }
 
-.leaflet-control-zoom {
+.leaflet-touch .leaflet-control-layers,
+.leaflet-touch .leaflet-bar {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    border: none;
+    background-clip: padding-box;
+}
+
+.leaflet-control-zoom.leaflet-bar.leaflet-control {
     top: 40px;
+    left: 0;
 }
 
 .leaflet-draw.leaflet-control {
-    top: 50px;
+    position: absolute;
+    top: 110px;
+    left: 0;
+}
+
+
+.leaflet-bar.leaflet-control.pin-control {
+    position: absolute;
+    top: 180px;
+    left: 0;
+    z-index: 101;
+}
+
+.leaflet-bar.leaflet-control.leaflet-reset-button {
+    position: absolute;
+    top: 220px;
+    left: 0;
+    z-index: 101;
+}
+
+.leaflet-bar.leaflet-control.leaflet-download-button {
+    position: absolute;
+    top: 260px;
+    left: 0;
+    z-index: 101;
+}
+
+.leaflet-bar.leaflet-control.leaflet-tooltip-button {
+    position: absolute;
+    top: 300px;
+    left: 0;
+    z-index: 101;
+}
+
+.chart-swiper-button {
+    position: absolute;
+    top: 350px;
+    left: 10px;
+    z-index: 1001;
 }
 
 @media (max-width: 768px) {
-    .leaflet-control-zoom {
+    .leaflet-control-zoom.leaflet-bar.leaflet-control {
         top: 90px;
     }
 
     .leaflet-draw.leaflet-control {
-        top: 100px;
+        top: 160px;
     }
+
+
+    .leaflet-bar.leaflet-control.pin-control {
+        top: 230px;
+    }
+
+    .leaflet-bar.leaflet-control.leaflet-reset-button {
+        top: 270px;
+    }
+
+    .leaflet-bar.leaflet-control.leaflet-download-button {
+        top: 310px;
+    }
+
+    .leaflet-bar.leaflet-control.leaflet-tooltip-button {
+        top: 350px;
+    }
+
 }

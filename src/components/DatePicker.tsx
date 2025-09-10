@@ -7,9 +7,10 @@ interface DatePickerProps {
     value: Date;
     onChange: (value: Date) => void;
     availableDates?: Date[];
+    mode?: string;
 }
 
-const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, availableDates }) => {
+const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, availableDates, mode }) => {
     return (
         <div className="datepicker-container">
             <DatePickerInput
@@ -20,7 +21,6 @@ const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, availableDates
                     const date = input instanceof Date ? input : new Date(input);
 
                     if (!availableDates || isNaN(date.getTime())) {
-                        // console.log("🛑 Skipping exclusion check due to invalid date:", input);
                         return false;
                     }
 
@@ -28,7 +28,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, availableDates
                     const match = availableDates.some(d => d.toDateString() === targetDateStr);
 
                     if (!match) {
-                        // console.log("⛔️ Excluding date:", targetDateStr);
+                        // console.log("Excluding date:", targetDateStr);
                     }
 
                     return !match;
@@ -37,7 +37,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, availableDates
 
 
                 onChange={(dateInput) => {
-                    console.log('DatePicker raw change:', dateInput);
+                    // console.log('DatePicker raw change:', dateInput);
                     // Convert input to Date, whether it's already a Date or a string
                     const parsedDate = dateInput instanceof Date ? dateInput : new Date(dateInput);
 
@@ -46,17 +46,17 @@ const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, availableDates
                             parsedDate.getFullYear(),
                             parsedDate.getMonth(),
                             parsedDate.getDate(),
-                            12 // shift to 12:00 UTC to avoid selecting midnight, which is earlier than the first forecast time in NetCDF files
+                            0 // set to 00:00 UTC to match base_time in API
                         ));
 
-                        console.log('Normalized date in DatePicker:', normalized);
+                        console.log('[DatePicker] Normalized date in DatePicker:', normalized);
                         onChange(normalized); // Propagate to parent
                     } else {
-                        console.warn('Invalid date selected:', dateInput);
+                        console.warn('[DatePicker] Invalid date selected:', dateInput);
                     }
                 }}
                 placeholder="Pick date"
-                label="Pick date"
+                label={mode || "Pick date"}
                 required
                 // maxDate={new Date()}
                 clearable={false}

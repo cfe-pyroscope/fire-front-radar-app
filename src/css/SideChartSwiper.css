@@ -1,0 +1,82 @@
+/* ====== Sizing knobs ====== */
+/* Desktop: drawer 50% viewport width; Mobile: full width */
+:root {
+    --drawer-size: 50vw;
+
+    /* How much to shave off the viewport height so you can see the next/prev slide */
+    --peek-amount: 120px;
+}
+
+
+/* ====== Drawer body fills the height so percentages resolve properly ====== */
+.sideChartSwiper .mantine-Drawer-body {
+    height: 100vh;
+    overflow: hidden;
+    padding: 0 10px;
+}
+
+/* ====== Carousel sizing ====== */
+.sideChartSwiper__carousel {
+    height: 100%;
+    /* Each vertical slide’s height: a bit less than viewport height to show a peek */
+    --slide-size: calc(100vh - var(--peek-amount));
+}
+
+/* Make viewport/container fill */
+.sideChartSwiper__carousel .mantine-Carousel-viewport,
+.sideChartSwiper__carousel .mantine-Carousel-container {
+    height: 100%;
+    background: transparent;
+}
+
+/* Indicators */
+.sideChartSwiper__carousel .mantine-Carousel-indicator {
+    width: 6px;
+    height: 6px;
+}
+
+/* Close button placement */
+.sideChartSwiper__close {
+    position: absolute;
+    top: 8px;
+    right: 20px;
+    z-index: 1;
+}
+
+.sideChartSwiper__close svg {
+    stroke: var(--mantine-color-gray-7);
+    stroke-width: 4px;
+}
+
+/* Cards fill each slide */
+.sideChartSwiper__card {
+    background: white;
+    height: 100%;
+    padding: var(--mantine-spacing-md);
+    border-radius: var(--mantine-radius-md);
+    box-shadow: var(--mantine-shadow-md);
+}
+
+.sideChartSwiper__stack {
+    height: 100%;
+}
+
+.sideChartSwiper__filler {
+    flex: 1;
+    min-height: 0;
+}
+
+/* Mobile override */
+@media (max-width: 62em) {
+
+    /* Mantine md ~ 992px */
+    :root {
+        --drawer-size: 100vw;
+        --peek-amount: 130px;
+    }
+
+    .mantine-Stack-root {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+}

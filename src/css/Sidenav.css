@@ -1,0 +1,50 @@
+.navbar_cnt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100vh;
+  box-sizing: border-box;
+  position: absolute;
+  left: 0;
+  transition: width 0.4s ease;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 0;
+  z-index: 1002;
+}
+
+.navbar_inner_cnt {
+  height: 340px;
+  overflow: hidden;
+  background-color: white;
+  border-radius: 4px;
+}
+
+
+.nav-link {
+  color: transparent;
+}
+
+.nav-link:focus,
+.nav-link:hover,
+.navActive {
+  color: var(--color-logo-darker-blue) !important;
+
+}
+
+.navbar {
+  background-color: var(--color-random3) !important
+}
+
+
+.noStyleButton {
+  all: unset;
+  display: inline;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+}

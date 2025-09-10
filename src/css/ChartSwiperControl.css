@@ -1,4 +1,4 @@
-.leaflet-reset-button {
+.chart-swiper-button {
     width: 30px;
     height: 30px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
@@ -11,24 +11,23 @@
     justify-content: center;
     cursor: pointer;
     font-size: 18px;
-    font-weight: bold;
     user-select: none;
-    transition: opacity 0.2s ease, background-color 0.2s ease;
 }
 
-.leaflet-reset-button:hover:not(.disabled) {
-    background: #ebebeb;
-    color: currentColor;
-}
-
-.leaflet-reset-button.disabled {
+.chart-swiper-button.is-disabled {
     opacity: 0.4 !important;
     cursor: not-allowed !important;
     pointer-events: none !important;
 }
 
-.leaflet-reset-button:active:not(.disabled) {
-    background-color: #e8e8e8;
+.chart-swiper-button:hover {
+    background: #ebebeb;
+    color: currentColor;
 }
 
-@media (max-width: 768px) {}
+@media (max-width: 768px) {
+    .chart-swiper-button {
+        position: relative;
+        margin-top: 54px;
+    }
+}

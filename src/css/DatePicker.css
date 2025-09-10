@@ -1,14 +1,18 @@
 .datepicker-container {
-    position: absolute;
-    top: 110px;
-    right: 10px;
-    z-index: 1000;
+    position: relative;
+    margin-top: 15px;
+    z-index: 105;
     background-color: white;
     padding: 8px;
     border-radius: 8px;
     box-shadow: 0 0 6px rgba(0, 0, 0, 0.2);
+    width: 169px;
 }
 
 .datepicker-container .mantine-DatePickerInput-required {
     opacity: 0;
+}
+
+:where([data-weekend]) {
+    color: #000 !important;
 }

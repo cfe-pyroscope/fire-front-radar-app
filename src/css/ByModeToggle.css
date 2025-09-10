@@ -1,15 +1,11 @@
-.index-toggle-container {
+.bymode-toggle-container {
     position: relative;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     border-radius: 8px;
-    width: 169px;
+    margin-top: 15px;
 }
 
-.index-toggle-container .mantine-SegmentedControl-root {
-    width: 100%;
-}
-
-.index-info-button {
+.bymode-info-button {
     display: flex;
     justify-content: flex-end;
     margin-bottom: 4px;

@@ -1,18 +1,18 @@
 import { useEffect } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
-import '../css/DownloadButton.css';
+import '../css/DownloadControl.css';
 import { IconDownload } from '@tabler/icons-react';
 import ReactDOMServer from 'react-dom/server';
 import domtoimage from 'dom-to-image';
 
-const DownloadButton = () => {
+const DownloadControl = () => {
     const map = useMap();
 
     useEffect(() => {
         const control = L.Control.extend({
             onAdd: function () {
-                const container = L.DomUtil.create('div', 'leaflet-download-button');
+                const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-download-button');
                 container.title = 'Download heatmap image';
 
                 container.innerHTML = ReactDOMServer.renderToString(<IconDownload size={18} />);
@@ -64,4 +64,4 @@ const DownloadButton = () => {
     return null;
 };
 
-export default DownloadButton;
+export default DownloadControl;

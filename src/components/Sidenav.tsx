@@ -9,8 +9,7 @@ import {
 } from '@tabler/icons-react';
 import { Center, Stack, Tooltip, UnstyledButton } from '@mantine/core';
 import classes from '../css/NavbarMinimal.module.css';
-import '../css/Navbar.css';
-import { BadgeCard } from './BadgeCard';
+import '../css/Sidenav.css';
 
 interface NavbarLinkProps {
   icon: typeof IconHome2;
@@ -86,25 +85,23 @@ export const Sidenav = () => {
 
   return (
     <>
-      <div
+      <div className="navbar_cnt"
         style={{
-          width: sidenavIsOpen ? '340px' : '120px',
-          transition: 'width 0.4s ease',
-          overflow: 'hidden',
-          whiteSpace: 'nowrap',
-          backgroundColor: '#f8f9fa',
-          borderRight: '1px solid #ccc',
-          padding: '1rem',
-          display: 'flex',
-          flexDirection: 'column',
-
-          alignItems: 'center',
-          height: '100vh',
-          boxSizing: 'border-box',
+          width: sidenavIsOpen ? '340px' : '70px',
+          backgroundColor: sidenavIsOpen ? '#fff' : 'transparent',
+          top: sidenavIsOpen ? '0' : '10px',
         }}
       >
-        <div style={{ width: '100%', height: '80vh' }}>
-          <nav className={classes.navbar}>
+        <div className="navbar_inner_cnt"
+          style={{
+            boxShadow: sidenavIsOpen ? 'none' : '0 2px 6px rgba(0, 0, 0, 0.2)',
+            width: sidenavIsOpen ? '100%' : '45px',
+          }}
+        >
+          <nav className={classes.navbar}
+            style={{
+              paddingTop: sidenavIsOpen ? '20px' : '10px',
+            }}>
             <button
               onClick={toggleSidenav}
               style={{ textAlign: 'center' }}
@@ -142,21 +139,6 @@ export const Sidenav = () => {
           </Stack> */}
           </nav>
         </div>
-        <div
-          style={{
-            height: '15vh',
-            width: '100%',
-            wordWrap: 'break-word',
-            whiteSpace: 'normal',
-          }}
-        >
-          {/* <p>
-            Marina I thought we could put some of the permanent map
-            functionality here? Equally it might be better on the map, we can
-            play around with the space.{' '}
-          </p> */}
-        </div>
-      </div>
-    </>
+      </div></>
   );
 };
