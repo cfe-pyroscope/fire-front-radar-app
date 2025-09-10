@@ -12,7 +12,7 @@ const DownloadControl = () => {
     useEffect(() => {
         const control = L.Control.extend({
             onAdd: function () {
-                const container = L.DomUtil.create('div', 'leaflet-download-button');
+                const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-download-button');
                 container.title = 'Download heatmap image';
 
                 container.innerHTML = ReactDOMServer.renderToString(<IconDownload size={18} />);
