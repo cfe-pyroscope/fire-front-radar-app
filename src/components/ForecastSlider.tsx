@@ -97,11 +97,12 @@ const ForecastSlider: React.FC<ForecastSliderProps> = ({
 
         return (
             <div className="forecast-slider-container">
+                <Text size="sm" mb={4}>Forecast date:</Text>
+                <Text size="sm" mb={8}>{combinedDateTimeLabel}</Text>
+
                 <Text size="sm" mb={4}>Base date:</Text>
                 <Text size="sm" mb={8}>{baseDateLabel}</Text>
 
-                <Text size="sm" mb={4}>Forecast date (UTC):</Text>
-                <Text size="sm" mb={8}>{combinedDateTimeLabel}</Text>
 
                 <Slider
                     min={0}
