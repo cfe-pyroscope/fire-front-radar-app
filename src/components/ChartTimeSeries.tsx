@@ -124,72 +124,65 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
         const makeAreaGradient = (
             idx: 'pof' | 'fopi',
             colors: string[],
-            maxShown: number
+            axisMin: number,
+            axisMax: number
         ) => {
-            // Reverse so bottom=light, top=dark
-            const palette = colors.slice().reverse();
+            // bottom (0) = light, top (1) = dark
+            const palette = colors;
+            const range = Math.max(1e-9, axisMax - axisMin);
+            const toLocal = (y: number) => clamp01((y - axisMin) / range); // 0 bottom → 1 top
 
-            if (idx === 'pof') // POF: gradient spans axisMin..0.05 with first 9 colors (lighter→darker),
-            // and from 0.05 upward it's solid darkest.
-            {
-                const palette = colors.slice().reverse(); // bottom light → top dark
-                const lightToDarkBelow = palette.slice(0, palette.length - 1); // 9 colors
+            if (idx === 'pof') {
+                const lightToDarkBelow = palette.slice(0, palette.length - 1);
                 const darkest = palette[palette.length - 1];
 
-                // Map absolute y to local [0..1] within filled area
-                const denom = Math.max(1e-9, maxShown - axisMin);
-                const toLocal = (y: number) => clamp01((y - axisMin) / denom);
+                const t = toLocal(0.05); // threshold position in [0..1], 0 bottom → 1 top
 
-                const tAbs = 0.05;       // threshold in axis units
-                const t = toLocal(tAbs); // threshold in local [0..1]
-
-                // Case A: everything is below 0.05 → use only the 9-color gradient
+                // Threshold above the visible range → only the 9-color gradient
                 if (t >= 1) {
                     const n = lightToDarkBelow.length;
                     const stops = lightToDarkBelow.map((c, i) => ({
                         offset: n === 1 ? 1 : i / (n - 1),
                         color: c,
                     }));
-                    return new echarts.graphic.LinearGradient(0, 0, 0, 1, stops);
+                    return new echarts.graphic.LinearGradient(0, 1, 0, 0, stops);
                 }
 
-                // Case B: axisMin is already >= 0.05 → all darkest
+                // Entire range above threshold → solid darkest
                 if (t <= 0) {
-                    return new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                    return new echarts.graphic.LinearGradient(0, 1, 0, 0, [
                         { offset: 0, color: darkest },
                         { offset: 1, color: darkest },
                     ]);
                 }
 
-                // Case C: axisMin < 0.05 < maxShown
+                // Pack the light→dark gradient into [0 .. t] (bottom .. threshold),
+                // then hard switch to darkest for [t .. 1] (threshold .. top).
                 const n = lightToDarkBelow.length;
                 const belowStops = lightToDarkBelow.map((c, i) => ({
-                    // pack 9 colors smoothly into [0 .. t)
                     offset: n === 1 ? t : (t * i) / (n - 1),
                     color: c,
                 }));
 
-                // Hard switch to darkest at t, and darkest afterwards.
-                return new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                return new echarts.graphic.LinearGradient(0, 1, 0, 0, [
                     ...belowStops,
                     { offset: t, color: darkest },
                     { offset: 1, color: darkest },
                 ]);
             }
 
-            // FOPI: split evenly across the local area height (0..1)
+            // FOPI: evenly split bottom→top
             const n = palette.length;
             const stops = palette.map((c, i) => ({
                 offset: n === 1 ? 1 : i / (n - 1),
                 color: c,
             }));
-
-            return new echarts.graphic.LinearGradient(0, 0, 0, 1, stops);
+            return new echarts.graphic.LinearGradient(0, 1, 0, 0, stops);
         };
 
 
 
-        const colors = getPalette('official');
+        const colors = getPalette('official_5');
 
         const nums = (arr: (number | null)[]) => arr.filter((v): v is number => typeof v === 'number');
 
@@ -227,7 +220,8 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
             ? {
                 areaStyle: {
                     opacity: 1,
-                    color: makeAreaGradient(indexSel, colors, maxShown),
+                    origin: axisMin, // <<< anchor the filled area at the current y-axis min
+                    color: makeAreaGradient(indexSel, colors, axisMin, maxShown),
                 },
             }
             : {};
@@ -358,12 +352,12 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
             // Point: [lon, lat]
             if (geo.length === 2) {
                 const [lon, lat] = geo;
-                return `point: ${dms(lat, 'N', 'S')}, ${dms(lon, 'E', 'W')}`;
+                return `point ${dms(lat, 'N', 'S')}, ${dms(lon, 'E', 'W')}`;
             }
             // BBox: [minLon, minLat, maxLon, maxLat]
             if (geo.length === 4) {
                 const [minLon, minLat, maxLon, maxLat] = geo;
-                return `area (SW → NE): ${dms(minLat, 'N', 'S')}, ${dms(minLon, 'E', 'W')} → ${dms(
+                return `area (SW → NE) ${dms(minLat, 'N', 'S')}, ${dms(minLon, 'E', 'W')} → ${dms(
                     maxLat,
                     'N',
                     'S'
@@ -387,7 +381,7 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
     const explanation =
         indexSel === 'pof' ? (
             <>
-                Line chart showing <strong>POF</strong> values for the selected area ({where_coords}) between {fromStr} – {toStr}. The scale runs from{" "}
+                Line chart showing <strong>POF</strong> values for the selected {where_coords} between {fromStr} – {toStr}. The scale runs from{" "}
                 <span style={{ color: '#fff7ec', textShadow: '1px 1px 2px #000000' }}>0</span>{" "}
                 to{" "}
                 <span style={{ color: '#7f0000' }}>1</span>
@@ -397,7 +391,7 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
             </>
         ) : (
             <>
-                Line chart showing <strong>FOPI</strong> values for the selected area ({where_coords}) between {fromStr} – {toStr}. The scale runs from{" "}
+                Line chart showing <strong>FOPI</strong> values for the selected {where_coords} between {fromStr} – {toStr}. The scale runs from{" "}
                 <span style={{ color: '#fff7ec', textShadow: '1px 1px 2px #000000' }}>0</span>{" "}
                 to{" "}
                 <span style={{ color: '#7f0000' }}>1</span>

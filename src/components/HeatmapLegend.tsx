@@ -15,7 +15,7 @@ interface Props {
     paletteName?: 'official' | 'eecharts';
 }
 
-const HeatmapLegend: React.FC<Props> = ({ vmin, vmax, index = "", paletteName = 'ecmwf' }) => {
+const HeatmapLegend: React.FC<Props> = ({ vmin, vmax, index = "", paletteName = 'official_5' }) => {
     const colors = getPalette(paletteName); // already skips transparent
 
     const displayVmin = formatLegendValue(vmin, index);
