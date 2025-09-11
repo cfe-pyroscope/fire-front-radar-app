@@ -43,6 +43,26 @@ const ResetViewControl = () => {
         const resetControl = new control({ position: 'topleft' });
         map.addControl(resetControl);
 
+        const syncWithCurrentView = () => {
+            const el = containerRef.current;
+            if (!el) return;
+
+            const atInitialZoom = map.getZoom() === INITIAL_MAP_ZOOM;
+            const atInitialCenter =
+                map.getCenter().distanceTo(L.latLng(INITIAL_MAP_CENTER)) < 1; // ~1m tolerance
+
+            const atInitial = atInitialZoom && atInitialCenter;
+
+            el.classList.toggle("disabled", atInitial);
+            userHasInteractedRef.current = !atInitial;
+        };
+
+        syncWithCurrentView();
+
+        map.on("moveend", syncWithCurrentView);
+        map.on("zoomend", syncWithCurrentView);
+
+
         const enableButton = () => {
             if (!userHasInteractedRef.current) {
                 userHasInteractedRef.current = true;
