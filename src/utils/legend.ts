@@ -41,7 +41,7 @@ export function getLegendDescription(index: IndexType): string {
         case 'pof':
             return '≥ 0.05 extreme fire risk';
         case 'fopi':
-            return '≥ 0.08 extreme fire risk';
+            return '≥ 0.8 extreme fire risk';
         default:
             return 'Risk levels from low to extreme';
     }
@@ -99,7 +99,7 @@ export function computeLegendLabels(
 }
 
 
-export type PaletteName = 'official' | 'eecharts';
+export type PaletteName = 'official' | 'official_5' | 'eecharts';
 
 const PALETTES: Record<PaletteName, string[]> = {
     official: [
@@ -112,6 +112,13 @@ const PALETTES: Record<PaletteName, string[]> = {
         '#ef6548',
         '#d7301f',
         '#b30000',
+        '#7f0000',
+    ],
+    official_5: [
+        '#fff7ec',
+        '#fdbb84',
+        '#ef6548',
+        '#d7301f',
         '#7f0000',
     ],
     eecharts: [
@@ -128,7 +135,7 @@ const PALETTES: Record<PaletteName, string[]> = {
     ],
 };
 
-export function getPalette(name: PaletteName = 'official', { includeTransparent = false } = {}): string[] {
+export function getPalette(name: PaletteName = 'official', { includeTransparent = true } = {}): string[] {
     const raw = PALETTES[name] ?? PALETTES.official;
     return includeTransparent ? raw.slice() : raw.slice(1); // default: skip transparent color
 }

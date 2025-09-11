@@ -5,6 +5,7 @@ import ReactDOMServer from "react-dom/server";
 import { IconMessage } from "@tabler/icons-react";
 import { getTooltipValue } from "../api/fireIndexApi";
 import { formatDate } from "../utils/date";
+import { getPalette } from "../utils/legend";
 import "../css/TooltipControl.css";
 
 
@@ -32,17 +33,8 @@ const TooltipControl = ({ indexName, baseTime, forecastTime, mode }: Props) => {
     const lastClickLatLngRef = useRef<L.LatLng | null>(null);
 
 
-    /* from ECWMWF color palette */
-    const PALETTE = [
-        "#00000000", "#fff7ec", "#fee8c8", "#fdd49e", "#fdbb84",
-        "#fc8d59", "#ef6548", "#d7301f", "#b30000", "#7f0000",
-    ];
-
-    /*  used for fopi and pof in echarts
-    const PALETTE = [
-        "#00000000", "#E3E8DA", "#C2DBC0", "#FFBF00", "#CC9A03",
-        "#C45B2C", "#AD3822", "#951517", "#3A072C", "#0F0A0A",
-    ]; */
+    const PALETTE = getPalette('official');
+    const PALETTE_5 = getPalette('official_5');
 
     const clamp = (n: number, a = 0, b = 1) => Math.min(b, Math.max(a, n));
 
@@ -55,15 +47,33 @@ const TooltipControl = ({ indexName, baseTime, forecastTime, mode }: Props) => {
         return 1;
     }
 
-    /** Pick palette color by normalized value (0..1). */
+
+    /** Pick official_5 color using real thresholds; t=0 (measured 0) => white; null stays gray via caller */
     function colorFromPalette(t: number) {
-        const i = Math.round(t * (PALETTE.length - 1));
-        return PALETTE[clamp(i, 0, PALETTE.length - 1)];
+        const palette = PALETTE_5;
+        const tt =
+            indexRef.current === "fopi"
+                ? [0.20, 0.40, 0.60, 0.80, 1]
+                // pof thresholds mapped into normalized t-space; 0.050 => Extreme (t=1)
+                : [0.0025 / 0.045, 0.0075 / 0.045, 0.015 / 0.045, 0.030 / 0.045, 1];
+
+        const x = clamp(t, 0, 1);
+
+        if (x === 0) return "#ffffff";        // measured value 0 → "No risk" → white
+
+        if (x <= tt[0]) return palette[0];    // Low
+        if (x <= tt[1]) return palette[1];    // Medium
+        if (x <= tt[2]) return palette[2];    // High
+        if (x <= tt[3]) return palette[3];    // Very High
+        return palette[4];                    // Extreme (incl. POF ≥ 0.050)
     }
 
+
+
+
     /** Simple luminance check to choose readable text color */
-    function textOn(bgHex: string, dark = "#111827", light = "#ffffff") {
-        // handle transparent color
+    function textOn(bgHex?: string, dark = "#111827", light = "#ffffff") {
+        if (!bgHex || typeof bgHex !== "string") return dark;
         if (bgHex === "#00000000") return dark;
         const hex = bgHex.replace("#", "");
         const r = parseInt(hex.substring(0, 2), 16) / 255;
@@ -72,6 +82,7 @@ const TooltipControl = ({ indexName, baseTime, forecastTime, mode }: Props) => {
         const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
         return lum > 0.6 ? dark : light;
     }
+
 
     /** Label logic per index. */
     function labelFor(indexName: IndexName, v: number | null) {
@@ -92,7 +103,7 @@ const TooltipControl = ({ indexName, baseTime, forecastTime, mode }: Props) => {
         if (v <= 0.0075) return "Medium";
         if (v <= 0.015) return "High";
         if (v <= 0.030) return "Very High";
-        if (v <= 0.045) return "Extreme";
+        if (v <= 0.050) return "Extreme";
         return "Extreme";
     }
 
