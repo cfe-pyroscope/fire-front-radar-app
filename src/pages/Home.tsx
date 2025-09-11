@@ -93,6 +93,14 @@ const Home: React.FC = () => {
     ]);
 
     const [drawnBounds, setDrawnBounds] = useState<LatLngBounds | null>(null);
+
+    useEffect(() => {
+        const onAreaClear = () => setDrawnBounds(null);
+        window.addEventListener('area-clear', onAreaClear);
+        return () => window.removeEventListener('area-clear', onAreaClear);
+    }, []);
+
+
     const [isHeatmapLoading, setIsHeatmapLoading] = useState(false);
     const [scale, setScale] = useState<{ vmin: number; vmax: number } | null>(null);
 
