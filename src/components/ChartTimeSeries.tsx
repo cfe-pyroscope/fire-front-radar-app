@@ -418,9 +418,9 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
                 style={{
                     whiteSpace: 'normal',
                     wordBreak: 'break-word',
-                    overflowWrap: 'anywhere',   // breaks long tokens too
+                    overflowWrap: 'anywhere',
                     lineHeight: 1.45,
-                    maxWidth: '500px',
+                    maxWidth: '100%',
                 }}
             >
                 {explanation}

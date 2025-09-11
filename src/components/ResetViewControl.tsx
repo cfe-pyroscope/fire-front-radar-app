@@ -30,6 +30,7 @@ const ResetViewControl = () => {
 
                     // Tell PinSelect to clear its (single) marker
                     window.dispatchEvent(new CustomEvent('pin-clear'));
+                    window.dispatchEvent(new CustomEvent('area-clear'));
 
                     // Disable button again (we're back to initial)
                     container.classList.add('disabled');
@@ -42,6 +43,21 @@ const ResetViewControl = () => {
 
         const resetControl = new control({ position: 'topleft' });
         map.addControl(resetControl);
+
+
+        const dispatchDisableChartsBtn = () => {
+            window.dispatchEvent(new CustomEvent("ffr:charts:disable"));
+        };
+
+        containerRef.current?.addEventListener("click", dispatchDisableChartsBtn);
+
+        // re-enable the charts button on user interaction with the map
+        const dispatchEnableChartsBtn = () => {
+            window.dispatchEvent(new CustomEvent("ffr:charts:enable"));
+        };
+        map.on("movestart", dispatchEnableChartsBtn);
+        map.on("zoomstart", dispatchEnableChartsBtn);
+
 
         const syncWithCurrentView = () => {
             const el = containerRef.current;
