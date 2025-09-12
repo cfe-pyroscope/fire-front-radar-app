@@ -1,11 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { getTimeSeries } from "../api/fireIndexApi";
+import { getTimeSeries, type TimeSeriesByBaseTime } from "../api/fireIndexApi";
 import * as echarts from 'echarts';
 import type { EChartsOption } from 'echarts';
 import {
-    Button,
     Card,
-    Code,
     Group,
     Loader,
     SegmentedControl,
@@ -14,8 +12,6 @@ import {
     Text,
     Box,
     Title,
-    Tooltip as MantineTooltip,
-    Select,
     Space,
 } from '@mantine/core';
 
@@ -23,17 +19,6 @@ import { getPalette } from "../utils/legend";
 
 import { toNiceDateShort, toNiceDateLong } from "../utils/date";
 
-// --- API type (by_base_time only) --------------------------------------------
-type TimeSeriesByBaseTime = {
-    index: 'pof' | 'fopi';
-    mode: 'by_base_time';
-    stat: ['mean', 'median'] | string[];
-    bbox?: string | null; // EPSG:3857 "minX,minY,maxX,maxY" or null
-    bbox_epsg4326?: [number, number, number, number]; // [lon_min, lat_min, lon_max, lat_max]
-    timestamps: string[];
-    mean: (number | null)[];
-    median: (number | null)[];
-};
 
 // --- Props -------------------------------------------------------------------
 type Props = {
@@ -73,7 +58,7 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
 
         getTimeSeries(indexSel, bboxSel || null, abort.signal)
             .then((res) => {
-                setData(res as TimeSeriesByBaseTime);
+                setData(res);
             })
             .catch((e) => {
                 if (abort.signal.aborted) return;
@@ -105,6 +90,7 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
             echartsRef.current = null;
         };
     }, []);
+
 
     const option: EChartsOption = useMemo(() => {
         const timestamps = data?.timestamps ?? [];

@@ -28,7 +28,6 @@ interface Props {
     selectedDate: Date;
     onDateChange: (d: Date | null) => void;
     availableDates: Date[] | null;
-    dateLabel: string;
 
     /* forecast controls */
     showControls: boolean;
@@ -49,7 +48,6 @@ const RightControlsController: React.FC<Props> = ({
     selectedDate,
     onDateChange,
     availableDates,
-    dateLabel,
     showControls,
     forecastSteps,
     baseTime,
@@ -67,7 +65,6 @@ const RightControlsController: React.FC<Props> = ({
                     value={selectedDate}
                     onChange={onDateChange}
                     availableDates={availableDates}
-                    label={dateLabel}
                 />
 
                 {showControls && (

@@ -87,23 +87,18 @@ const AreaSelect: React.FC<AreaSelectProps> = ({ onDrawComplete }) => {
             onDrawComplete(bounds);
         };
 
-        // Clear drawn items when map is clicked (outside of drawing mode)
-        const onMapClick = () => {
-            if (!map.pm || !map.pm.globalDrawModeEnabled()) {
-                drawnItems.clearLayers();
-            }
-        };
 
-        map.on(L.Draw.Event.CREATED, onDrawCreated);
-        // clear selection on map click
-        // map.on('click', onMapClick);
+        const handlerCreated = (e: L.LeafletEvent) =>
+            onDrawCreated(e as L.DrawEvents.Created);
+
+        map.on('draw:created', handlerCreated);
 
         return () => {
-            map.off(L.Draw.Event.CREATED, onDrawCreated);
-            // map.off('click', onMapClick); // add the click listener
+            map.off('draw:created', handlerCreated);
             map.removeControl(AreaSelect);
             map.removeLayer(drawnItems);
         };
+
     }, [map, onDrawComplete]);
 
     return null;

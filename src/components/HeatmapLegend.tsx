@@ -12,7 +12,7 @@ interface Props {
     vmin: number;
     vmax: number;
     index?: IndexType;
-    paletteName?: 'official' | 'eecharts';
+    paletteName?: 'official' | 'official_5' | 'eecharts';
 }
 
 const HeatmapLegend: React.FC<Props> = ({ vmin, vmax, index = "", paletteName = 'official_5' }) => {

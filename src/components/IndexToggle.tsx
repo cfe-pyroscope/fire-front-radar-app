@@ -17,7 +17,7 @@ const IndexToggle: React.FC<IndexToggleProps> = ({ currentIndex, onToggle }) => 
 
             <SegmentedControl
                 value={currentIndex}
-                onChange={(value: "fopi" | "pof") => onToggle(value)}
+                onChange={(value) => onToggle(value as "pof" | "fopi")}
                 data={[
                     { label: "POF", value: "pof" },
                     { label: "FOPI", value: "fopi" },

@@ -54,7 +54,7 @@ export default function SideChartSwiper({
                 className="sideChartSwiper__carousel"
                 withIndicators
                 slideGap="md"
-                align="start"
+                emblaOptions={{ align: 'start' }}
                 height="100%"                  // fills Drawer body
                 slideSize="var(--slide-size)"  // height of each slide
             >
