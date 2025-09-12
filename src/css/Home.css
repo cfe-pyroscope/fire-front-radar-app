@@ -42,6 +42,26 @@
     z-index: 101;
 }
 
+
+.leaflet-bar .maptool-pin {
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+.leaflet-bar .maptool-pin.active {
+    background-color: #1C7ED6 !important;
+    color: #ffffff;
+}
+
+.leaflet-bar .maptool-pin.active svg {
+    stroke: #ffffff !important;
+}
+
+
+.leaflet-bar .maptool-pin:hover:not(.active) {
+    background: #ebebeb;
+}
+
 .leaflet-bar.leaflet-control.leaflet-download-button {
     position: absolute;
     top: 260px;

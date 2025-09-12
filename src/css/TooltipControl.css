@@ -44,6 +44,10 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 
+.leaflet-marker-pane {
+    z-index: 1001;
+}
+
 /* layout */
 .fire-tip {
     min-width: 260px;

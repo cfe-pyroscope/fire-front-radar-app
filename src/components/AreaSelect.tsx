@@ -37,7 +37,7 @@ const AreaSelect: React.FC<AreaSelectProps> = ({ onDrawComplete }) => {
                 rectangle: {
                     showArea: false,
                     shapeOptions: {
-                        color: '#96C1FC',
+                        color: '#1C7ED6',
                         weight: 2,
                         fillOpacity: 0.2, // filled while drawing
                         // (leave fill=true default)
@@ -46,7 +46,7 @@ const AreaSelect: React.FC<AreaSelectProps> = ({ onDrawComplete }) => {
                 polygon: {
                     showArea: false,
                     shapeOptions: {
-                        color: '#96C1FC',
+                        color: '#1C7ED6',
                         weight: 2,
                         fillOpacity: 0.2, // filled while drawing
                     },

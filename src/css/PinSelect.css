@@ -8,12 +8,3 @@
     justify-content: center;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
-
-.leaflet-control.pin-control a.maptool-pin {
-    cursor: pointer;
-    pointer-events: auto;
-}
-
-.leaflet-control.pin-control a.maptool-pin.active {
-    background: rgba(0, 0, 0, 0.08);
-}

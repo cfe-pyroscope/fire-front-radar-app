@@ -128,6 +128,26 @@ const TooltipControl = ({ indexName, baseTime, forecastTime, mode }: Props) => {
     useEffect(() => { baseRef.current = baseTime; }, [baseTime]);
     useEffect(() => { forecastRef.current = forecastTime; }, [forecastTime]);
 
+    useEffect(() => {
+        const onTooltipClear = () => {
+            // turn off the control if it was active
+            enabledRef.current = false;
+            containerRef.current?.classList.remove("active");
+
+            // remove click handler & reset cursor
+            if (onMapClickRef.current) map.off("click", onMapClickRef.current);
+            (map.getContainer() as HTMLElement).style.cursor = "";
+
+            // stop any pending fetch and close popup
+            abortRef.current?.abort();
+            map.closePopup();
+            popupRef.current = null;
+            lastClickLatLngRef.current = null;
+        };
+
+        window.addEventListener("tooltip-clear", onTooltipClear);
+        return () => window.removeEventListener("tooltip-clear", onTooltipClear);
+    }, [map]);
 
     useEffect(() => {
         const control = L.Control.extend({

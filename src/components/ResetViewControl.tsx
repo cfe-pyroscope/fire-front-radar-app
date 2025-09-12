@@ -18,6 +18,8 @@ const ResetViewControl = () => {
                     'div',
                     'leaflet-bar leaflet-control leaflet-reset-button disabled'
                 );
+                L.DomEvent.disableClickPropagation(container);
+                L.DomEvent.disableScrollPropagation(container);
                 container.title = 'Reset view';
                 container.innerHTML = ReactDOMServer.renderToString(<IconTarget size={18} />);
                 containerRef.current = container;
@@ -25,16 +27,17 @@ const ResetViewControl = () => {
                 container.onclick = () => {
                     if (container.classList.contains('disabled')) return;
 
-                    // Reset view
+                    map.stop();
+
+                    window.dispatchEvent(new CustomEvent('pin-clear'));
+                    window.dispatchEvent(new CustomEvent('clear-area-selection'));
+                    window.dispatchEvent(new CustomEvent('tooltip-clear'));
+
                     map.setView(INITIAL_MAP_CENTER, INITIAL_MAP_ZOOM);
 
-                    // Tell PinSelect to clear its (single) marker
-                    window.dispatchEvent(new CustomEvent('pin-clear'));
-                    window.dispatchEvent(new CustomEvent('area-clear'));
-
-                    // Disable button again (we're back to initial)
                     container.classList.add('disabled');
                     userHasInteractedRef.current = false;
+
                 };
 
                 return container;

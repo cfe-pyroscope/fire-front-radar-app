@@ -114,10 +114,15 @@ const LeftControlsController: React.FC<Props> = ({
     const handleSelectBounds = useCallback(
         (b: LatLngBounds) => {
             onDrawComplete(b);
-            setPinMode(false); // exit after one drop
         },
         [onDrawComplete]
     );
+
+    useEffect(() => {
+        const turnOff = () => setPinMode(false);
+        window.addEventListener("pin-clear", turnOff);
+        return () => window.removeEventListener("pin-clear", turnOff);
+    }, []);
 
     return (
         <>
