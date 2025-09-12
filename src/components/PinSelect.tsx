@@ -62,7 +62,7 @@ const PinSelect: React.FC<Props> = ({ enabled, onSelectBounds, deltaDeg = 0.01 }
             group.clearLayers();
             L.marker(latlng, { icon: pinIcon }).addTo(group);
 
-            window.dispatchEvent(new CustomEvent("clear-area-selection"));  // remove previously selected areas
+            window.dispatchEvent(new CustomEvent("area-selection-clear"));  // remove previously selected areas
 
             // Compute a small bbox around the point
             const d = deltaDeg;

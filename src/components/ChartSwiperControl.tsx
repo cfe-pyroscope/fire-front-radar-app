@@ -1,4 +1,5 @@
 import { IconChartBar } from "@tabler/icons-react";
+import { useEffect, useState } from "react";
 import "../css/ChartSwiperControl.css";
 
 type Props = {
@@ -14,21 +15,38 @@ export default function ChartSwiperControl({
     onClick,
     disabled = false,
 }: Props) {
-    const computedTitle = disabled
+
+    // Disable via reset (chart-clear), re-enable when parent says it's allowed
+    const [forceDisabled, setForceDisabled] = useState(false);
+
+    useEffect(() => {
+        const handleClear = () => setForceDisabled(true);
+        window.addEventListener("chart-clear", handleClear);
+        return () => window.removeEventListener("chart-clear", handleClear);
+    }, []);
+
+    // When parent says "not disabled" (i.e., an area is selected), lift our forced disable
+    useEffect(() => {
+        if (!disabled) setForceDisabled(false);
+    }, [disabled]);
+
+    const isDisabled = disabled || forceDisabled;
+
+    const computedTitle = isDisabled
         ? "Select an area on the map to view charts"
         : title;
 
     return (
         <div
-            className={`chart-swiper-button ${disabled ? "is-disabled" : ""} ${className}`}
+            className={`chart-swiper-button ${isDisabled ? "is-disabled" : ""} ${className}`}
             title={computedTitle}
             aria-label={computedTitle}
-            aria-disabled={disabled}
+            aria-disabled={isDisabled}
             role="button"
-            tabIndex={disabled ? -1 : 0}
-            onClick={disabled ? undefined : onClick}
+            tabIndex={isDisabled ? -1 : 0}
+            onClick={isDisabled ? undefined : onClick}
             onKeyDown={
-                disabled
+                isDisabled
                     ? undefined
                     : (e) => {
                         if (e.key === "Enter" || e.key === " ") {

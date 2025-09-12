@@ -32,6 +32,7 @@ const ResetViewControl = () => {
                     window.dispatchEvent(new CustomEvent('pin-clear'));
                     window.dispatchEvent(new CustomEvent('clear-area-selection'));
                     window.dispatchEvent(new CustomEvent('tooltip-clear'));
+                    window.dispatchEvent(new CustomEvent('chart-clear'));
 
                     map.setView(INITIAL_MAP_CENTER, INITIAL_MAP_ZOOM);
 
