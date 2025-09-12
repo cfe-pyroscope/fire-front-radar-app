@@ -45,7 +45,12 @@ const PinSelect: React.FC<Props> = ({ enabled, onSelectBounds, deltaDeg = 0.01 }
             groupRef.current?.clearLayers(); // removes any existing marker(s)
         };
         window.addEventListener("clear-pin-selection", handler);
-        return () => window.removeEventListener("clear-pin-selection", handler);
+        window.addEventListener("pin-clear", handler);
+
+        return () => {
+            window.removeEventListener("clear-pin-selection", handler);
+            window.removeEventListener("pin-clear", handler);
+        };
     }, []);
 
     const placeMarker = useCallback(
@@ -104,6 +109,13 @@ const PinSelect: React.FC<Props> = ({ enabled, onSelectBounds, deltaDeg = 0.01 }
             if (wasDragging) map.dragging.enable();
         };
     }, [map, enabled]);
+
+    // When the tool is toggled OFF, remove any existing pin
+    useEffect(() => {
+        if (!enabled) {
+            groupRef.current?.clearLayers();
+        }
+    }, [enabled]);
 
     // Click-to-place when in pin mode
     useMapEvent("click", (e) => {
