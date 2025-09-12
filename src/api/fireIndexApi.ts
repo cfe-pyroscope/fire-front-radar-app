@@ -282,12 +282,24 @@ export async function getTooltipValue(
 }
 
 
+
+export type TimeSeriesByBaseTime = {
+    index: 'pof' | 'fopi';
+    mode: 'by_base_time';
+    stat: ['mean', 'median'] | string[];
+    bbox_epsg3857?: string | null;
+    bbox_epsg4326?: [number, number, number, number];
+    timestamps: string[];
+    mean: (number | null)[];
+    median: (number | null)[];
+};
+
 export async function getTimeSeries(
-    indexName: IndexName,
+    indexName: 'pof' | 'fopi',
     bbox?: string | null,
     signal?: AbortSignal
-): Promise<TimeSeriesPoint[]> {
+): Promise<TimeSeriesByBaseTime> {
     let url = `${API_BASE_URL}/api/${indexName}/time_series?format=json`;
     if (bbox) url += `&bbox=${encodeURIComponent(bbox)}`;
-    return fetchJSON<TimeSeriesPoint[]>(url, signal);
+    return fetchJSON<TimeSeriesByBaseTime>(url, signal);
 }

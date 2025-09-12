@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import { Slider, Text } from "@mantine/core";
 import { formatBaseDateLabel, formatCombinedDateTimeLabel } from "../utils/date";
 import "../css/ForecastSlider.css";

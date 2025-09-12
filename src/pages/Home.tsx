@@ -151,7 +151,6 @@ const Home: React.FC = () => {
                         selectedDate={selectedDate}
                         onDateChange={handleDateChange}
                         availableDates={availableDates}
-                        dateLabel={mode === "by_forecast" ? "Pick forecast" : "Pick date"}
                         showControls={showControls}
                         forecastSteps={forecastSteps}
                         baseTime={baseTime}
@@ -201,7 +200,6 @@ const Home: React.FC = () => {
                             indexName={indexName}
                             baseTime={baseTime!}
                             selectedForecastTime={selectedForecastTimeLocal!}
-                            forecastSteps={forecastSteps}
                             mode={mode}
                             onHeatmapLoadingChange={setIsHeatmapLoading}
                             onScaleChange={setScale}

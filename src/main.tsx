@@ -1,3 +1,4 @@
+// src/main.tsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
@@ -18,13 +19,16 @@ if (import.meta.env.DEV) {
     if (typeof msg === 'string' && msg.includes('Unexpected return value from a callback ref')) {
       return;
     }
-    originalConsoleError(...args as Parameters<typeof originalConsoleError>);
+    originalConsoleError(...(args as Parameters<typeof originalConsoleError>));
   };
 }
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <MantineProvider withGlobalStyles withNormalizeCSS theme={{ fontFamily: 'Lato, sans-serif' }}>
+    <MantineProvider
+      theme={{ fontFamily: 'Lato, sans-serif' }}
+      defaultColorScheme="light"
+    >
       <BrowserRouter>
         <AppRoutes />
       </BrowserRouter>

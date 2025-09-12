@@ -17,7 +17,7 @@ const ByModeToggle: React.FC<ByModeToggleProps> = ({ mode, onToggle }) => (
         </div>
         <SegmentedControl
             value={mode}
-            onChange={onToggle}
+            onChange={(v) => onToggle(v as Mode)}
             data={[
                 { label: "By Date", value: "by_date" },
                 { label: "By Forecast", value: "by_forecast" },
