@@ -17,13 +17,13 @@ const AreaSelect: React.FC<AreaSelectProps> = ({ onDrawComplete }) => {
     L.drawLocal.draw.toolbar.buttons.rectangle = "Select a rectangular area";
     L.drawLocal.draw.toolbar.buttons.polygon = "Select a polygonal area";
 
-    // listen for "clear-area-selection" and wipe the drawn area
+    // listen for "area-selection-clear" and wipe the drawn area
     useEffect(() => {
         const handler = () => {
             drawnItemsRef.current?.clearLayers();
         };
-        window.addEventListener("clear-area-selection", handler);
-        return () => window.removeEventListener("clear-area-selection", handler);
+        window.addEventListener("area-selection-clear", handler);
+        return () => window.removeEventListener("area-selection-clear", handler);
     }, []);
 
 

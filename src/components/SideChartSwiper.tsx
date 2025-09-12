@@ -1,3 +1,4 @@
+import React, { useEffect } from "react";
 import { Drawer, Box, Paper, Stack, ActionIcon } from "@mantine/core";
 import { Carousel } from "@mantine/carousel";
 import { IconX } from "@tabler/icons-react";
@@ -23,6 +24,12 @@ export default function SideChartSwiper({
     bbox
 }: Props) {
     const slides = Array.from({ length: 5 }, (_, i) => i + 1);
+
+    useEffect(() => {
+        const handler = () => onClose();
+        window.addEventListener("chart-clear", handler);
+        return () => window.removeEventListener("chart-clear", handler);
+    }, [onClose]);
 
     return (
         <Drawer

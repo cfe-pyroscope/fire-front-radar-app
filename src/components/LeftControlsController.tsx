@@ -124,6 +124,8 @@ const LeftControlsController: React.FC<Props> = ({
         return () => window.removeEventListener("pin-clear", turnOff);
     }, []);
 
+
+
     return (
         <>
             <LocationSearch onSelectBounds={onDrawComplete} />
