@@ -3,7 +3,7 @@
 
 /* ====== Drawer body fills the height so percentages resolve properly ====== */
 .sideChartSwiper .mantine-Drawer-body {
-    width: 60vw;
+    width: 50vw;
     height: 100vh;
     overflow: hidden;
     padding: 0 10px;

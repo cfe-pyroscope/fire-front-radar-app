@@ -131,17 +131,15 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
             const palette = colors;
             const range = Math.max(1e-9, axisMax - axisMin);
             const toLocal = (y: number) => clamp01((y - axisMin) / range); // 0 bottom → 1 top
+            const darkest = palette[palette.length - 1];
+            const n = palette.length;
 
             if (idx === 'pof') {
-                const lightToDarkBelow = palette.slice(0, palette.length - 1);
-                const darkest = palette[palette.length - 1];
-
                 const t = toLocal(0.05); // threshold position in [0..1], 0 bottom → 1 top
 
                 // Threshold above the visible range → only the 9-color gradient
                 if (t >= 1) {
-                    const n = lightToDarkBelow.length;
-                    const stops = lightToDarkBelow.map((c, i) => ({
+                    const stops = palette.map((c, i) => ({
                         offset: n === 1 ? 1 : i / (n - 1),
                         color: c,
                     }));
@@ -158,8 +156,7 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
 
                 // Pack the light→dark gradient into [0 .. t] (bottom .. threshold),
                 // then hard switch to darkest for [t .. 1] (threshold .. top).
-                const n = lightToDarkBelow.length;
-                const belowStops = lightToDarkBelow.map((c, i) => ({
+                const belowStops = palette.map((c, i) => ({
                     offset: n === 1 ? t : (t * i) / (n - 1),
                     color: c,
                 }));
@@ -172,7 +169,6 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
             }
 
             // FOPI: evenly split bottom→top
-            const n = palette.length;
             const stops = palette.map((c, i) => ({
                 offset: n === 1 ? 1 : i / (n - 1),
                 color: c,
@@ -180,11 +176,10 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
             return new echarts.graphic.LinearGradient(0, 1, 0, 0, stops);
         };
 
-
-
         const colors = getPalette('official_5');
 
-        const nums = (arr: (number | null)[]) => arr.filter((v): v is number => typeof v === 'number');
+        const nums = (arr: (number | null)[]) =>
+            arr.filter((v): v is number => typeof v === 'number');
 
         const minMean = Math.min(...nums(mean));
         const minMedian = Math.min(...nums(median));
@@ -198,9 +193,9 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
             minShown = minMedian;
         }
 
-        // Safety: if no data, fall back to 0
         if (!isFinite(minShown)) minShown = 0;
 
+        // y-axis baseline
         const axisMin = Math.max(0, minShown * 0.95);
 
         const maxMean = Math.max(0, ...nums(mean));
@@ -215,20 +210,34 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
             maxShown = maxMedian;
         }
 
+        // Per-series extents (used only for gradients)
+        const extent = (arr: (number | null)[]) => {
+            const x = nums(arr);
+            return x.length
+                ? { min: Math.min(...x), max: Math.max(...x) }
+                : { min: NaN, max: NaN };
+        };
+        const safe = (v: number, fallback: number) =>
+            Number.isFinite(v) ? v : fallback;
 
-        const areaStyle = area
-            ? {
-                areaStyle: {
-                    opacity: 1,
-                    origin: axisMin, // <<< anchor the filled area at the current y-axis min
-                    color: makeAreaGradient(indexSel, colors, axisMin, maxShown),
-                },
-            }
-            : {};
+        const meanExt = extent(mean);
+        const medianExt = extent(median);
+
+        const mkSeriesArea = (seriesMin: number, seriesMax: number) =>
+            area
+                ? {
+                    areaStyle: {
+                        opacity: 1,
+                        // Anchor the fill to the chart y-min so the area baseline is stable.
+                        origin: axisMin,
+                        // But compute the gradient mapping from this series' own min/max.
+                        color: makeAreaGradient(indexSel, colors, seriesMin, seriesMax),
+                    },
+                }
+                : {};
 
         const meanColor = '#8a3b00';
         const medianColor = '#0a5f65';
-
 
         const common = {
             type: 'line' as const,
@@ -236,7 +245,6 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
             smooth,
             sampling: sampling === 'lttb' ? 'lttb' : undefined,
             connectNulls: true,
-            ...areaStyle,
         };
 
         const series: any[] = [];
@@ -246,6 +254,10 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
                 name: 'Mean',
                 data: mean,
                 ...common,
+                ...mkSeriesArea(
+                    Math.max(0, safe(meanExt.min, axisMin)),
+                    Math.max(1e-9, safe(meanExt.max, maxShown))
+                ),
                 lineStyle: { width: 2, color: meanColor },
                 itemStyle: { color: meanColor },
             });
@@ -255,6 +267,10 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
                 name: 'Median',
                 data: median,
                 ...common,
+                ...mkSeriesArea(
+                    Math.max(0, safe(medianExt.min, axisMin)),
+                    Math.max(1e-9, safe(medianExt.max, maxShown))
+                ),
                 lineStyle: { width: 2, color: medianColor },
                 itemStyle: { color: medianColor },
             });
@@ -270,13 +286,12 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
                 formatter: (params: any) => {
                     const header = toNiceDateLong(params[0].axisValue); // format the date
                     const lines = params.map((p: any) => {
-                        const val = typeof p.data === 'number' ? p.data.toFixed(6) : '';
+                        const val = typeof p.data === 'number' ? p.data.toFixed(4) : '';
                         return `${p.marker}${p.seriesName}: ${val}`;
                     });
                     return [header, ...lines].join('<br/>');
                 },
             },
-
             legend: { top: 50 },
             toolbox: {
                 right: 16,
@@ -296,9 +311,9 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
             yAxis: {
                 type: 'value',
                 name: indexSel === 'pof' ? 'POF' : 'FOPI',
-                min: Math.max(0, minShown * 0.95), // pad 5% below data min, but never below 0
-                max: (val: any) => Math.max(1e-6, Number(val.max)), // *1.2 to keep 20% headroom
-                axisLabel: { formatter: (val: number) => val.toFixed(3) },
+                min: Math.max(0, minShown * 0.95),
+                max: (val: any) => Math.max(1e-6, Number(val.max)),
+                axisLabel: { formatter: (val: number) => val.toFixed(4) },
             },
             dataZoom: [
                 { type: 'inside', start: 0, end: 100 },
@@ -335,6 +350,7 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
         };
         return opt;
     }, [data, seriesMode, smooth, area, sampling, indexSel]);
+
 
     useEffect(() => {
         if (!echartsRef.current) return;
