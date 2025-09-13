@@ -67,6 +67,8 @@ const ResetViewControl = () => {
         // 2) Custom events for selections
         const onExternalEnable = () => enableButton();
         window.addEventListener('ffr:reset:enable', onExternalEnable);
+        window.addEventListener('ffr:charts:opened', onExternalEnable);
+        window.addEventListener('ffr:charts:closed', onExternalEnable);
 
         // 3) (Optional) If your tooltip control emits one of these, we’ll catch it
         window.addEventListener('tooltip-show', onExternalEnable);
@@ -76,6 +78,10 @@ const ResetViewControl = () => {
             map.removeControl(resetControl);
             map.off('movestart', enableButton);
             map.off('zoomstart', enableButton);
+
+            window.removeEventListener('ffr:charts:opened', onExternalEnable);
+            window.removeEventListener('ffr:charts:closed', onExternalEnable);
+
             window.removeEventListener('ffr:reset:enable', onExternalEnable);
             window.removeEventListener('tooltip-show', onExternalEnable);
             window.removeEventListener('tooltip:selected', onExternalEnable);

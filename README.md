@@ -21,7 +21,8 @@ src/
 │  
 ├── components/    
 │   ├── AreaSelect.tsx                # Drawing tools; allow user to select an area on the map 
-│   ├── ByModeInfoPopover.tsx         # Info tooltip explaining the "by date"/"by forecast" toggle  
+│   ├── ByModeInfoPopover.tsx         # Info tooltip explaining the "by date"/"by forecast" toggle    
+│   └── ChartSideSwiper.tsx           # Vertical carousel on the left, containing charts             
 │   ├── ByModeToggle.tsx              # Mantine SegmentedControl to toggle between "by date" and "by forecast" modes   
 │   ├── ChartSwiperControl.tsx        # Button; active a side bar containing a swiper with charts  
 │   ├── ChartTimeSeries.tsx           # Chart; Time series of fopi or pof value for a selected area 
@@ -42,7 +43,6 @@ src/
 │   ├── MapLabels.tsx                 # To have map labels over the heatmap image   
 │   └── ResetViewControl.tsx          # Reset the map at the initial zoom and position    
 │   └── RightControlsController.tsx   # Container for the control elements on the right side              
-│   └── SideChartSwiper.tsx           # Vertical carousel on the left, containing charts             
 │   └── TooltipControl.tsx            # Button; active a tooltip with info about the selected coordinates       
 │  
 ├── hooks/  

@@ -21,7 +21,7 @@ import MapLabels from "../components/MapLabels";
 import HeatmapController from "../components/HeatmapController";
 import LeftControlsController from "../components/LeftControlsController";
 import RightControlsController from "../components/RightControlsController";
-import SideChartSwiper from "../components/SideChartSwiper";
+import ChartSideSwiper from "../components/ChartSideSwiper";
 
 import { useAvailableDates, useLatestDate, useForecastSteps } from "../hooks/useFireIndex";
 
@@ -215,7 +215,7 @@ const Home: React.FC = () => {
                 </MapContainer>
             </div>
 
-            <SideChartSwiper
+            <ChartSideSwiper
                 opened={chartsOpen}
                 onClose={() => setChartsOpen(false)}
                 indexName={indexName}

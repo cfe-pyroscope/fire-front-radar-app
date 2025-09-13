@@ -199,8 +199,8 @@ const TooltipControl = ({ indexName, baseTime, forecastTime, mode }: Props) => {
 
                                     <div class="label">Lat/Lon</div>
                                     <div class="value mono">
-                                            ${Math.abs(data.point.lat).toFixed(2)}${data.point.lat >= 0 ? 'N°' : 'S°'},
-                                            ${Math.abs(data.point.lon).toFixed(2)}${data.point.lon >= 0 ? 'E°' : 'W°'}
+                                            ${Math.abs(data.point.lat).toFixed(2)}${data.point.lat >= 0 ? '° N' : '° S'},
+                                            ${Math.abs(data.point.lon).toFixed(2)}${data.point.lon >= 0 ? '° E' : '° W'}
                                     </div>
 
                                     <!-- <div class="label">EPSG:3857</div>
@@ -361,8 +361,8 @@ const TooltipControl = ({ indexName, baseTime, forecastTime, mode }: Props) => {
 
                                 <div class="label">Lan/Lon</div>
                                 <div class="value mono">
-                                        ${Math.abs(data.point.lat).toFixed(2)}${data.point.lat >= 0 ? 'N°' : 'S°'},
-                                        ${Math.abs(data.point.lon).toFixed(2)}${data.point.lon >= 0 ? 'E°' : 'W°'}
+                                        ${Math.abs(data.point.lat).toFixed(2)}${data.point.lat >= 0 ? '° N' : '° S'},
+                                        ${Math.abs(data.point.lon).toFixed(2)}${data.point.lon >= 0 ? '° E' : '° W'}
                                 </div>
 
                                 /* <div class="label">EPSG:3857</div>

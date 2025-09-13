@@ -5,7 +5,7 @@ import '../css/DatePicker.css';
 
 type DateLike = Date | string | number | { toDate: () => Date };
 
-export interface MyDatePickerProps {
+export interface DatePickerProps {
     value: Date;
     onChange: (value: Date) => void;
     availableDates?: readonly DateLike[] | null; // ← more permissive
@@ -24,7 +24,7 @@ function toRealDate(input: unknown): Date | null {
     return Number.isNaN(d.getTime()) ? null : d;
 }
 
-const DatePicker: React.FC<MyDatePickerProps> = ({ value, onChange, availableDates, mode }) => {
+const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, availableDates, mode }) => {
     // Normalize once
     const normalized = useMemo(
         () => (availableDates ? (availableDates.map(toRealDate).filter(Boolean) as Date[]) : undefined),

@@ -27,13 +27,23 @@ export default function ChartSwiperControl({
             aria-disabled={disabled}
             role="button"
             tabIndex={disabled ? -1 : 0}
-            onClick={disabled ? undefined : onClick}
+            onClick={
+                disabled
+                    ? undefined
+                    : () => {
+                        // Let others know charts are opening
+                        window.dispatchEvent(new CustomEvent('ffr:charts:opened'));
+                        onClick?.();
+                    }
+            }
             onKeyDown={
                 disabled
                     ? undefined
                     : (e) => {
                         if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
+                            // also tell others charts are opening on keyboard activation
+                            window.dispatchEvent(new CustomEvent('ffr:charts:opened'));
                             onClick?.();
                         }
                     }
