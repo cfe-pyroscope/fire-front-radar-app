@@ -89,7 +89,6 @@ const AreaSelect: React.FC<AreaSelectProps> = ({ onDrawComplete }) => {
 
             onDrawComplete(bounds);
             window.dispatchEvent(new CustomEvent('area-selected', { detail: { bounds } }));
-
         };
 
 

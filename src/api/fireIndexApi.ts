@@ -294,12 +294,26 @@ export type TimeSeriesByBaseTime = {
     median: (number | null)[];
 };
 
+
 export async function getTimeSeries(
     indexName: 'pof' | 'fopi',
     bbox?: string | null,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    startBase?: string | Date | null,
+    endBase?: string | Date | null
 ): Promise<TimeSeriesByBaseTime> {
     let url = `${API_BASE_URL}/api/${indexName}/time_series?format=json`;
     if (bbox) url += `&bbox=${encodeURIComponent(bbox)}`;
+
+    const toIsoUtc = (d: string | Date) => {
+        const dd = d instanceof Date ? d : new Date(d);
+        // Force to UTC midnight and output 2025-09-01T00:00:00Z
+        return new Date(Date.UTC(dd.getFullYear(), dd.getMonth(), dd.getDate())).toISOString();
+    };
+
+    if (startBase) url += `&start_base=${encodeURIComponent(toIsoUtc(startBase))}`;
+    if (endBase) url += `&end_base=${encodeURIComponent(toIsoUtc(endBase))}`;
+
     return fetchJSON<TimeSeriesByBaseTime>(url, signal);
 }
+
