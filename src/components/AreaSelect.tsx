@@ -22,14 +22,18 @@ const AreaSelect: React.FC<AreaSelectProps> = ({ onDrawComplete }) => {
         const handler = () => {
             drawnItemsRef.current?.clearLayers();
         };
-        window.addEventListener("area-selection-clear", handler);
-        return () => window.removeEventListener("area-selection-clear", handler);
+        window.addEventListener("clear-area-selection", handler);
+        return () => window.removeEventListener("clear-area-selection", handler);
     }, []);
 
 
     useEffect(() => {
         const drawnItems = drawnItemsRef.current;
         map.addLayer(drawnItems);
+
+        const clear = () => drawnItems.clearLayers();
+        window.addEventListener('clear-area-selection', clear);
+
 
         const AreaSelect = new L.Control.Draw({
             position: 'topleft',
@@ -75,7 +79,6 @@ const AreaSelect: React.FC<AreaSelectProps> = ({ onDrawComplete }) => {
             // switch to outline-only AFTER the draw completes
             layer.setStyle({ fill: false, fillOpacity: 0 });
 
-            window.dispatchEvent(new CustomEvent("clear-pin-selection")); // remove existing pin
 
             // keep the outline above overlays
             if ((layer as any).bringToFront) (layer as any).bringToFront();
@@ -85,6 +88,8 @@ const AreaSelect: React.FC<AreaSelectProps> = ({ onDrawComplete }) => {
             map.fitBounds(bounds, { padding: [20, 20] });
 
             onDrawComplete(bounds);
+            window.dispatchEvent(new CustomEvent('area-selected', { detail: { bounds } }));
+
         };
 
 
@@ -96,7 +101,6 @@ const AreaSelect: React.FC<AreaSelectProps> = ({ onDrawComplete }) => {
         return () => {
             map.off('draw:created', handlerCreated);
             map.removeControl(AreaSelect);
-            map.removeLayer(drawnItems);
         };
 
     }, [map, onDrawComplete]);

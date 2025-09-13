@@ -41,7 +41,9 @@
     color: #183449 !important;
 }
 
-
+.logo_cnt.dark .logo_text {
+    color: #FFF !important;
+}
 
 @media (max-width: 768px) {
     .logo_cnt {
