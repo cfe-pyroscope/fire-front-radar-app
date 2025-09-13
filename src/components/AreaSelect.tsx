@@ -17,7 +17,7 @@ const AreaSelect: React.FC<AreaSelectProps> = ({ onDrawComplete }) => {
     L.drawLocal.draw.toolbar.buttons.rectangle = "Select a rectangular area";
     L.drawLocal.draw.toolbar.buttons.polygon = "Select a polygonal area";
 
-    // listen for "clear-area-selection" and wipe the drawn area
+    // listen for "area-selection-clear" and wipe the drawn area
     useEffect(() => {
         const handler = () => {
             drawnItemsRef.current?.clearLayers();
@@ -31,13 +31,17 @@ const AreaSelect: React.FC<AreaSelectProps> = ({ onDrawComplete }) => {
         const drawnItems = drawnItemsRef.current;
         map.addLayer(drawnItems);
 
+        const clear = () => drawnItems.clearLayers();
+        window.addEventListener('clear-area-selection', clear);
+
+
         const AreaSelect = new L.Control.Draw({
             position: 'topleft',
             draw: {
                 rectangle: {
                     showArea: false,
                     shapeOptions: {
-                        color: '#96C1FC',
+                        color: '#1C7ED6',
                         weight: 2,
                         fillOpacity: 0.2, // filled while drawing
                         // (leave fill=true default)
@@ -46,7 +50,7 @@ const AreaSelect: React.FC<AreaSelectProps> = ({ onDrawComplete }) => {
                 polygon: {
                     showArea: false,
                     shapeOptions: {
-                        color: '#96C1FC',
+                        color: '#1C7ED6',
                         weight: 2,
                         fillOpacity: 0.2, // filled while drawing
                     },
@@ -75,7 +79,6 @@ const AreaSelect: React.FC<AreaSelectProps> = ({ onDrawComplete }) => {
             // switch to outline-only AFTER the draw completes
             layer.setStyle({ fill: false, fillOpacity: 0 });
 
-            window.dispatchEvent(new CustomEvent("clear-pin-selection")); // remove existing pin
 
             // keep the outline above overlays
             if ((layer as any).bringToFront) (layer as any).bringToFront();
@@ -85,25 +88,21 @@ const AreaSelect: React.FC<AreaSelectProps> = ({ onDrawComplete }) => {
             map.fitBounds(bounds, { padding: [20, 20] });
 
             onDrawComplete(bounds);
+            window.dispatchEvent(new CustomEvent('area-selected', { detail: { bounds } }));
+
         };
 
-        // Clear drawn items when map is clicked (outside of drawing mode)
-        const onMapClick = () => {
-            if (!map.pm || !map.pm.globalDrawModeEnabled()) {
-                drawnItems.clearLayers();
-            }
-        };
 
-        map.on(L.Draw.Event.CREATED, onDrawCreated);
-        // clear selection on map click
-        // map.on('click', onMapClick);
+        const handlerCreated = (e: L.LeafletEvent) =>
+            onDrawCreated(e as L.DrawEvents.Created);
+
+        map.on('draw:created', handlerCreated);
 
         return () => {
-            map.off(L.Draw.Event.CREATED, onDrawCreated);
-            // map.off('click', onMapClick); // add the click listener
+            map.off('draw:created', handlerCreated);
             map.removeControl(AreaSelect);
-            map.removeLayer(drawnItems);
         };
+
     }, [map, onDrawComplete]);
 
     return null;

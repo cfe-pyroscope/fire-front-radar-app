@@ -1,64 +1,57 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { DatePickerInput } from '@mantine/dates';
 import '@mantine/dates/styles.css';
 import '../css/DatePicker.css';
 
-interface DatePickerProps {
+type DateLike = Date | string | number | { toDate: () => Date };
+
+export interface MyDatePickerProps {
     value: Date;
     onChange: (value: Date) => void;
-    availableDates?: Date[];
+    availableDates?: readonly DateLike[] | null; // ← more permissive
     mode?: string;
 }
 
-const DatePicker: React.FC<DatePickerProps> = ({ value, onChange, availableDates, mode }) => {
+// Turn anything (Date | dayjs | string | number) into a Date
+function toRealDate(input: unknown): Date | null {
+    if (!input) return null;
+    if (input instanceof Date) return Number.isNaN(input.getTime()) ? null : input;
+    if (typeof input === 'object' && typeof (input as any).toDate === 'function') {
+        const d = (input as any).toDate();
+        return d instanceof Date && !Number.isNaN(d.getTime()) ? d : null;
+    }
+    const d = new Date(input as any);
+    return Number.isNaN(d.getTime()) ? null : d;
+}
+
+const DatePicker: React.FC<MyDatePickerProps> = ({ value, onChange, availableDates, mode }) => {
+    // Normalize once
+    const normalized = useMemo(
+        () => (availableDates ? (availableDates.map(toRealDate).filter(Boolean) as Date[]) : undefined),
+        [availableDates]
+    );
+
     return (
         <div className="datepicker-container">
             <DatePickerInput
                 value={value}
-                minDate={availableDates?.[0]}
-                maxDate={availableDates?.[availableDates.length - 1]}
-                excludeDate={(input) => {
-                    const date = input instanceof Date ? input : new Date(input);
-
-                    if (!availableDates || isNaN(date.getTime())) {
-                        return false;
-                    }
-
-                    const targetDateStr = date.toDateString();
-                    const match = availableDates.some(d => d.toDateString() === targetDateStr);
-
-                    if (!match) {
-                        // console.log("Excluding date:", targetDateStr);
-                    }
-
-                    return !match;
+                minDate={normalized?.[0]}
+                maxDate={normalized?.[normalized.length - 1]}
+                excludeDate={(raw) => {
+                    const date = toRealDate(raw);
+                    if (!date || !normalized) return false;
+                    const target = date.toDateString();
+                    return !normalized.some((d) => d.toDateString() === target);
                 }}
-
-
-
-                onChange={(dateInput) => {
-                    // console.log('DatePicker raw change:', dateInput);
-                    // Convert input to Date, whether it's already a Date or a string
-                    const parsedDate = dateInput instanceof Date ? dateInput : new Date(dateInput);
-
-                    if (parsedDate instanceof Date && !isNaN(parsedDate.getTime())) {
-                        const normalized = new Date(Date.UTC(
-                            parsedDate.getFullYear(),
-                            parsedDate.getMonth(),
-                            parsedDate.getDate(),
-                            0 // set to 00:00 UTC to match base_time in API
-                        ));
-
-                        console.log('[DatePicker] Normalized date in DatePicker:', normalized);
-                        onChange(normalized); // Propagate to parent
-                    } else {
-                        console.warn('[DatePicker] Invalid date selected:', dateInput);
-                    }
+                onChange={(next) => {
+                    const date = toRealDate(next);
+                    if (!date) return;
+                    const normalizedUTC = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 0));
+                    onChange(normalizedUTC);
                 }}
                 placeholder="Pick date"
-                label={mode || "Pick date"}
+                label={mode || 'Pick date'}
                 required
-                // maxDate={new Date()}
                 clearable={false}
                 dropdownType="popover"
                 popoverProps={{ position: 'bottom-end', withinPortal: true }}

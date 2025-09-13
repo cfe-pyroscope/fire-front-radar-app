@@ -1,11 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { getTimeSeries } from "../api/fireIndexApi";
+import { getTimeSeries, type TimeSeriesByBaseTime } from "../api/fireIndexApi";
 import * as echarts from 'echarts';
 import type { EChartsOption } from 'echarts';
 import {
-    Button,
     Card,
-    Code,
     Group,
     Loader,
     SegmentedControl,
@@ -14,8 +12,6 @@ import {
     Text,
     Box,
     Title,
-    Tooltip as MantineTooltip,
-    Select,
     Space,
 } from '@mantine/core';
 
@@ -23,17 +19,6 @@ import { getPalette } from "../utils/legend";
 
 import { toNiceDateShort, toNiceDateLong } from "../utils/date";
 
-// --- API type (by_base_time only) --------------------------------------------
-type TimeSeriesByBaseTime = {
-    index: 'pof' | 'fopi';
-    mode: 'by_base_time';
-    stat: ['mean', 'median'] | string[];
-    bbox?: string | null; // EPSG:3857 "minX,minY,maxX,maxY" or null
-    bbox_epsg4326?: [number, number, number, number]; // [lon_min, lat_min, lon_max, lat_max]
-    timestamps: string[];
-    mean: (number | null)[];
-    median: (number | null)[];
-};
 
 // --- Props -------------------------------------------------------------------
 type Props = {
@@ -73,7 +58,7 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
 
         getTimeSeries(indexSel, bboxSel || null, abort.signal)
             .then((res) => {
-                setData(res as TimeSeriesByBaseTime);
+                setData(res);
             })
             .catch((e) => {
                 if (abort.signal.aborted) return;
@@ -106,92 +91,42 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
         };
     }, []);
 
+
+    // Map a normalized t∈[0,1] to a palette color, using your thresholds
+    function paletteColorFor(indexSel: 'pof' | 'fopi', t: number) {
+        const PALETTE_5 = getPalette('official_5');
+        const tt =
+            indexSel === 'fopi'
+                ? [0.20, 0.40, 0.60, 0.80, 1]
+                // pof thresholds mapped into normalized t-space; 0.050 => Extreme (t=1)
+                : [0.0025 / 0.045, 0.0075 / 0.045, 0.015 / 0.045, 0.030 / 0.045, 1];
+
+        const x = Math.max(0, Math.min(1, t));
+        if (x === 0) return '#ffffff';
+        if (x <= tt[0]) return PALETTE_5[0]; // Low
+        if (x <= tt[1]) return PALETTE_5[1]; // Medium
+        if (x <= tt[2]) return PALETTE_5[2]; // High
+        if (x <= tt[3]) return PALETTE_5[3]; // Very High
+        return PALETTE_5[4];                 // Extreme
+    }
+
+    function hexToRgba(hex: string, alpha = 0.25) {
+        const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        if (!m) return hex;
+        const r = parseInt(m[1], 16);
+        const g = parseInt(m[2], 16);
+        const b = parseInt(m[3], 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+
     const option: EChartsOption = useMemo(() => {
         const timestamps = data?.timestamps ?? [];
         const mean = data?.mean ?? [];
         const median = data?.median ?? [];
 
-        // Clamp helper
-        const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
-
-        /**
-         * Build a vertical gradient for the area fill.
-         * - Lighter at y=0, darker at y=1 (palette reversed).
-         * - FOPI: evenly distributed 0..1 across the local area height.
-         * - POF: anything > 0.05 should be darkest; compute where 0.05 sits
-         *        relative to the current series max (visible data).
-         */
-        const makeAreaGradient = (
-            idx: 'pof' | 'fopi',
-            colors: string[],
-            maxShown: number
-        ) => {
-            // Reverse so bottom=light, top=dark
-            const palette = colors.slice().reverse();
-
-            if (idx === 'pof') // POF: gradient spans axisMin..0.05 with first 9 colors (lighter→darker),
-            // and from 0.05 upward it's solid darkest.
-            {
-                const palette = colors.slice().reverse(); // bottom light → top dark
-                const lightToDarkBelow = palette.slice(0, palette.length - 1); // 9 colors
-                const darkest = palette[palette.length - 1];
-
-                // Map absolute y to local [0..1] within filled area
-                const denom = Math.max(1e-9, maxShown - axisMin);
-                const toLocal = (y: number) => clamp01((y - axisMin) / denom);
-
-                const tAbs = 0.05;       // threshold in axis units
-                const t = toLocal(tAbs); // threshold in local [0..1]
-
-                // Case A: everything is below 0.05 → use only the 9-color gradient
-                if (t >= 1) {
-                    const n = lightToDarkBelow.length;
-                    const stops = lightToDarkBelow.map((c, i) => ({
-                        offset: n === 1 ? 1 : i / (n - 1),
-                        color: c,
-                    }));
-                    return new echarts.graphic.LinearGradient(0, 0, 0, 1, stops);
-                }
-
-                // Case B: axisMin is already >= 0.05 → all darkest
-                if (t <= 0) {
-                    return new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                        { offset: 0, color: darkest },
-                        { offset: 1, color: darkest },
-                    ]);
-                }
-
-                // Case C: axisMin < 0.05 < maxShown
-                const n = lightToDarkBelow.length;
-                const belowStops = lightToDarkBelow.map((c, i) => ({
-                    // pack 9 colors smoothly into [0 .. t)
-                    offset: n === 1 ? t : (t * i) / (n - 1),
-                    color: c,
-                }));
-
-                // Hard switch to darkest at t, and darkest afterwards.
-                return new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                    ...belowStops,
-                    { offset: t, color: darkest },
-                    { offset: 1, color: darkest },
-                ]);
-            }
-
-            // FOPI: split evenly across the local area height (0..1)
-            const n = palette.length;
-            const stops = palette.map((c, i) => ({
-                offset: n === 1 ? 1 : i / (n - 1),
-                color: c,
-            }));
-
-            return new echarts.graphic.LinearGradient(0, 0, 0, 1, stops);
-        };
-
-
-
-        const colors = getPalette('official');
-
-        const nums = (arr: (number | null)[]) => arr.filter((v): v is number => typeof v === 'number');
+        const nums = (arr: (number | null)[]) =>
+            arr.filter((v): v is number => typeof v === 'number');
 
         const minMean = Math.min(...nums(mean));
         const minMedian = Math.min(...nums(median));
@@ -204,37 +139,21 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
         } else {
             minShown = minMedian;
         }
-
-        // Safety: if no data, fall back to 0
         if (!isFinite(minShown)) minShown = 0;
 
+        // y-axis baseline (also used by area origin)
         const axisMin = Math.max(0, minShown * 0.95);
 
         const maxMean = Math.max(0, ...nums(mean));
         const maxMedian = Math.max(0, ...nums(median));
 
-        let maxShown = 0;
-        if (seriesMode === 'both') {
-            maxShown = Math.max(maxMean, maxMedian);
-        } else if (seriesMode === 'mean') {
-            maxShown = maxMean;
-        } else {
-            maxShown = maxMedian;
-        }
+        const norm = (idx: 'pof' | 'fopi', v: number) => {
+            if (!Number.isFinite(v) || v <= 0) return 0;
+            return idx === 'pof' ? Math.min(v / 0.05, 1) : Math.min(v, 1);
+        };
 
-
-        const areaStyle = area
-            ? {
-                areaStyle: {
-                    opacity: 1,
-                    color: makeAreaGradient(indexSel, colors, maxShown),
-                },
-            }
-            : {};
-
-        const meanColor = '#8a3b00';
-        const medianColor = '#0a5f65';
-
+        const meanAreaFill = hexToRgba(paletteColorFor(indexSel, norm(indexSel, maxMean)), 1);
+        const medianAreaFill = hexToRgba(paletteColorFor(indexSel, norm(indexSel, maxMedian)), 1);
 
         const common = {
             type: 'line' as const,
@@ -242,11 +161,12 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
             smooth,
             sampling: sampling === 'lttb' ? 'lttb' : undefined,
             connectNulls: true,
-            ...areaStyle,
         };
 
-        const series: any[] = [];
+        const meanColor = '#8a3b00';
+        const medianColor = '#0a5f65';
 
+        const series: any[] = [];
         if (seriesMode === 'both' || seriesMode === 'mean') {
             series.push({
                 name: 'Mean',
@@ -254,6 +174,7 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
                 ...common,
                 lineStyle: { width: 2, color: meanColor },
                 itemStyle: { color: meanColor },
+                ...(area ? { areaStyle: { origin: axisMin, color: meanAreaFill } } : {}),
             });
         }
         if (seriesMode === 'both' || seriesMode === 'median') {
@@ -263,6 +184,7 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
                 ...common,
                 lineStyle: { width: 2, color: medianColor },
                 itemStyle: { color: medianColor },
+                ...(area ? { areaStyle: { origin: axisMin, color: medianAreaFill } } : {}),
             });
         }
 
@@ -273,20 +195,22 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
             tooltip: {
                 trigger: 'axis',
                 axisPointer: { type: 'line' },
-                formatter: (params: any) => {
-                    const header = toNiceDateLong(params[0].axisValue); // format the date
+                formatter: (params: any[]) => {
+                    if (!params?.length) return '';
+                    const header = toNiceDateLong(params[0].axisValue);
                     const lines = params.map((p: any) => {
-                        const val = typeof p.data === 'number' ? p.data.toFixed(6) : '';
+                        const val = typeof p.data === 'number' ? p.data.toFixed(4) : '';
                         return `${p.marker}${p.seriesName}: ${val}`;
                     });
                     return [header, ...lines].join('<br/>');
                 },
             },
-
             legend: { top: 50 },
             toolbox: {
+                iconStyle: { borderColor: '#228be6', borderCap: 'round', borderWidth: '1' },
                 right: 16,
                 feature: {
+                    dataView: { readOnly: false },
                     dataZoom: { yAxisIndex: 'none' },
                     restore: {},
                     saveAsImage: {},
@@ -302,45 +226,34 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
             yAxis: {
                 type: 'value',
                 name: indexSel === 'pof' ? 'POF' : 'FOPI',
-                min: Math.max(0, minShown * 0.95), // pad 5% below data min, but never below 0
-                max: (val: any) => Math.max(1e-6, Number(val.max)), // *1.2 to keep 20% headroom
-                axisLabel: { formatter: (val: number) => val.toFixed(3) },
+                min: axisMin, // keep consistent with areaStyle.origin
+                max: (val: any) => Math.max(1e-6, Number(val.max)),
+                axisLabel: { formatter: (val: number) => val.toFixed(4) },
             },
             dataZoom: [
                 { type: 'inside', start: 0, end: 100 },
                 {
                     type: 'slider',
-                    start: 0,
-                    end: 100,
-                    height: 30,
-                    bottom: 10,
+                    start: 0, end: 100, height: 30, bottom: 10,
                     borderColor: 'transparent',
-                    backgroundColor: '#dee2e6',          // light grey track
-                    dataBackground: {
-                        lineStyle: { color: '#868e96' },      // grey outline of data
-                        areaStyle: { color: '#f1f3f5' },      // light grey fill
-                    },
-                    fillerColor: '#ced4da66', // mid grey for selected range
-                    handleStyle: {
-                        color: '#868e96',                     // darker grey handles
-                        borderColor: '#495057',
-                    },
-                    moveHandleStyle: {
-                        color: '#aaa',                     // lighter grey move handle
-                        opacity: 0.7,
-                    },
+                    /* backgroundColor: '#dee2e6',
+                    dataBackground: { lineStyle: { color: '#868e96' }, areaStyle: { color: '#f1f3f5' } },
+                    fillerColor: '#ced4da66',
+                    handleStyle: { color: '#868e96', borderColor: '#495057' },
+                    moveHandleStyle: { color: '#aaa', opacity: 0.7 }, */
                     labelFormatter: (val: any) => {
                         const i = Number(val);
                         const iso = timestamps[i];
                         return iso ? toNiceDateLong(iso) : '';
                     },
-
                 },
             ],
             series,
         };
         return opt;
     }, [data, seriesMode, smooth, area, sampling, indexSel]);
+
+
 
     useEffect(() => {
         if (!echartsRef.current) return;
@@ -356,14 +269,13 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
     ) => {
         if (Array.isArray(geo)) {
             // Point: [lon, lat]
-            if (geo.length === 2) {
-                const [lon, lat] = geo;
-                return `point: ${dms(lat, 'N', 'S')}, ${dms(lon, 'E', 'W')}`;
+            if (geo.length > 4) {
+                console.log("Logic to be implemented")
             }
             // BBox: [minLon, minLat, maxLon, maxLat]
             if (geo.length === 4) {
                 const [minLon, minLat, maxLon, maxLat] = geo;
-                return `area (SW → NE): ${dms(minLat, 'N', 'S')}, ${dms(minLon, 'E', 'W')} → ${dms(
+                return `area (SW → NE) ${dms(minLat, 'N', 'S')}, ${dms(minLon, 'E', 'W')} → ${dms(
                     maxLat,
                     'N',
                     'S'
@@ -387,7 +299,7 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
     const explanation =
         indexSel === 'pof' ? (
             <>
-                Line chart showing <strong>POF</strong> values for the selected area ({where_coords}) between {fromStr} – {toStr}. The scale runs from{" "}
+                Line chart showing <strong>POF</strong> values for the selected {where_coords} between {fromStr} – {toStr}. The scale runs from{" "}
                 <span style={{ color: '#fff7ec', textShadow: '1px 1px 2px #000000' }}>0</span>{" "}
                 to{" "}
                 <span style={{ color: '#7f0000' }}>1</span>
@@ -397,7 +309,7 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
             </>
         ) : (
             <>
-                Line chart showing <strong>FOPI</strong> values for the selected area ({where_coords}) between {fromStr} – {toStr}. The scale runs from{" "}
+                Line chart showing <strong>FOPI</strong> values for the selected {where_coords} between {fromStr} – {toStr}. The scale runs from{" "}
                 <span style={{ color: '#fff7ec', textShadow: '1px 1px 2px #000000' }}>0</span>{" "}
                 to{" "}
                 <span style={{ color: '#7f0000' }}>1</span>
@@ -418,9 +330,9 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
                 style={{
                     whiteSpace: 'normal',
                     wordBreak: 'break-word',
-                    overflowWrap: 'anywhere',   // breaks long tokens too
+                    overflowWrap: 'anywhere',
                     lineHeight: 1.45,
-                    maxWidth: '500px',
+                    maxWidth: '100%',
                 }}
             >
                 {explanation}

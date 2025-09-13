@@ -1,7 +1,9 @@
 import React, { useEffect } from "react";
 import { GeoSearchControl, OpenStreetMapProvider } from "leaflet-geosearch";
 import { useMap } from "react-leaflet";
-import { LatLngBounds } from "leaflet"; // NEW: for typing the callback
+import * as L from "leaflet";
+import { LatLngBounds } from "leaflet";
+import { Icon } from "leaflet";
 import "leaflet-geosearch/dist/geosearch.css";
 import '../css/LocationSearch.css';
 
@@ -16,13 +18,13 @@ const LocationSearch: React.FC<Props> = ({ onSelectBounds }) => {
     useEffect(() => {
         const provider = new OpenStreetMapProvider();
 
-        const searchControl = new GeoSearchControl({
+        const searchControl = new (GeoSearchControl as any)({
             provider,
             style: "button",
             showMarker: true,
             showPopup: false,
             marker: {
-                icon: new L.Icon.Default(),
+                icon: new Icon.Default(),
                 draggable: false,
             },
             maxMarkers: 1,
@@ -52,7 +54,7 @@ const LocationSearch: React.FC<Props> = ({ onSelectBounds }) => {
                 );
 
                 window.dispatchEvent(new CustomEvent("clear-pin-selection")); // remove existing pin
-                window.dispatchEvent(new CustomEvent("clear-area-selection"));  // remove previously selected areas
+                window.dispatchEvent(new CustomEvent("area-selection-clear"));  // remove previously selected areas
 
                 onSelectBounds?.(bounds);
             } catch {

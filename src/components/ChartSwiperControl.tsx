@@ -14,6 +14,7 @@ export default function ChartSwiperControl({
     onClick,
     disabled = false,
 }: Props) {
+
     const computedTitle = disabled
         ? "Select an area on the map to view charts"
         : title;

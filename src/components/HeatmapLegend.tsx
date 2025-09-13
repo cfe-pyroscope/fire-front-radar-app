@@ -12,10 +12,10 @@ interface Props {
     vmin: number;
     vmax: number;
     index?: IndexType;
-    paletteName?: 'official' | 'eecharts';
+    paletteName?: 'official' | 'official_5' | 'eecharts';
 }
 
-const HeatmapLegend: React.FC<Props> = ({ vmin, vmax, index = "", paletteName = 'ecmwf' }) => {
+const HeatmapLegend: React.FC<Props> = ({ vmin, vmax, index = "", paletteName = 'official_5' }) => {
     const colors = getPalette(paletteName); // already skips transparent
 
     const displayVmin = formatLegendValue(vmin, index);

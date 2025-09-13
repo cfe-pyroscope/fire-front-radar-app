@@ -1,6 +1,5 @@
 import React from "react";
 import { Image, Text, Flex } from "@mantine/core";
-import { useMediaQuery } from "@mantine/hooks";
 import '../css/LogoContainer.css';
 
 
@@ -19,8 +18,6 @@ const LogoContainer: React.FC<LogoContainerProps> = ({
     alt2,
     betweenText,
 }) => {
-
-    const isMobile = useMediaQuery("(max-width: 768px)");
 
     return (
         <Flex

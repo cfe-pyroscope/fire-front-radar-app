@@ -1,7 +1,8 @@
-import { Drawer, Box, Paper, Stack, ActionIcon } from '@mantine/core';
-import { Carousel } from '@mantine/carousel';
-import { IconX } from '@tabler/icons-react';
-import ChartTimeSeries from '../components/ChartTimeSeries';
+import React, { useEffect } from "react";
+import { Drawer, Box, Paper, Stack, ActionIcon } from "@mantine/core";
+import { Carousel } from "@mantine/carousel";
+import { IconX } from "@tabler/icons-react";
+import ChartTimeSeries from "../components/ChartTimeSeries";
 
 import '@mantine/carousel/styles.css';
 import '../css/SideChartSwiper.css';
@@ -22,7 +23,13 @@ export default function SideChartSwiper({
   indexName,
   bbox,
 }: Props) {
-  const slides = Array.from({ length: 5 }, (_, i) => i + 1);
+    const slides = Array.from({ length: 5 }, (_, i) => i + 1);
+
+    useEffect(() => {
+        const handler = () => onClose();
+        window.addEventListener("chart-clear", handler);
+        return () => window.removeEventListener("chart-clear", handler);
+    }, [onClose]);
 
   return (
     <Drawer

@@ -1,4 +1,3 @@
-import React, { useMemo } from "react";
 import HeatmapOverlay from "./HeatmapOverlay";
 
 
@@ -26,10 +25,12 @@ const HeatmapController: React.FC<HeatmapControllerProps> = ({
             key={`${indexName}-${baseTime}-${selectedForecastTime}`}
             indexName={indexName}
             base={baseTime}
-            forecastTime={selectedForecastTime}   // pass ISO forecast_time
+            forecastTime={selectedForecastTime}
             mode={mode}
             onLoadingChange={onHeatmapLoadingChange}
-            onScaleChange={onScaleChange}
+            onScaleChange={(scale) => {
+                if (scale) onScaleChange?.(scale); // ignore null
+            }}
         />
     );
 };

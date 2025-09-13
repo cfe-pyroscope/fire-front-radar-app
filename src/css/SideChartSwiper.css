@@ -1,15 +1,9 @@
-/* ====== Sizing knobs ====== */
 /* Desktop: drawer 50% viewport width; Mobile: full width */
-:root {
-    --drawer-size: 50vw;
-
-    /* How much to shave off the viewport height so you can see the next/prev slide */
-    --peek-amount: 120px;
-}
 
 
 /* ====== Drawer body fills the height so percentages resolve properly ====== */
 .sideChartSwiper .mantine-Drawer-body {
+    width: 60vw;
     height: 100vh;
     overflow: hidden;
     padding: 0 10px;
@@ -19,7 +13,7 @@
 .sideChartSwiper__carousel {
     height: 100%;
     /* Each vertical slide’s height: a bit less than viewport height to show a peek */
-    --slide-size: calc(100vh - var(--peek-amount));
+    --slide-size: calc(100vh - 120px);
 }
 
 /* Make viewport/container fill */
@@ -67,12 +61,10 @@
 }
 
 /* Mobile override */
-@media (max-width: 62em) {
+@media (max-width: 768px) {
 
-    /* Mantine md ~ 992px */
-    :root {
-        --drawer-size: 100vw;
-        --peek-amount: 130px;
+    .sideChartSwiper .mantine-Drawer-body {
+        width: 100vw;
     }
 
     .mantine-Stack-root {
