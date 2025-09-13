@@ -1,10 +1,19 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import * as echarts from "echarts";
 import type { EChartsOption } from "echarts";
+import type { TooltipComponentOption } from "echarts/components";
 import { Group, Loader, Text } from "@mantine/core";
 import { getPalette } from "../utils/legend";
 import { toNiceDateShort, toNiceDateLong } from "../utils/date";
 import type { TimeSeriesByBaseTime } from "../api/fireIndexApi";
+
+
+type TooltipFormatterFn = Extract<
+    TooltipComponentOption["formatter"],
+    (...args: any) => any
+>;
+
+type TooltipFmtParam = Parameters<TooltipFormatterFn>[0];
 
 type Props = {
     data: TimeSeriesByBaseTime | null;
@@ -15,7 +24,6 @@ type Props = {
     height?: number | string;
     loading?: boolean;
     error?: string | null;
-    setCarouselDraggable?: (v: boolean) => void;
 };
 
 const TimeSeriesChart: React.FC<Props> = ({
@@ -143,10 +151,10 @@ const TimeSeriesChart: React.FC<Props> = ({
             tooltip: {
                 trigger: "axis",
                 axisPointer: { type: "line" },
-                formatter: (params: any[]) => {
-                    if (!params?.length) return "";
-                    const header = toNiceDateLong(params[0].axisValue);
-                    const lines = params.map((p: any) => {
+                formatter: (params: TooltipFmtParam) => {
+                    const list = Array.isArray(params) ? params : [params];
+                    const header = toNiceDateLong((list[0] as any).axisValue as string);
+                    const lines = list.map((p: any) => {
                         const val = typeof p.data === "number" ? p.data.toFixed(4) : "";
                         return `${p.marker}${p.seriesName}: ${val}`;
                     });
@@ -155,7 +163,7 @@ const TimeSeriesChart: React.FC<Props> = ({
             },
             legend: { top: 50 },
             toolbox: {
-                iconStyle: { borderColor: "#C0C8E5", borderCap: "round", borderWidth: "1" },
+                iconStyle: { borderColor: "#C0C8E5", borderWidth: 1 },
                 right: 16,
                 feature: {
                     dataView: { readOnly: false },

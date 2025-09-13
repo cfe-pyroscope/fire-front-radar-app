@@ -10,7 +10,7 @@ import {
     Title,
     Space,
 } from "@mantine/core";
-import { toNiceDateLong } from "../utils/date";
+
 import TimeSeriesMenu from "./TimeSeriesMenu";
 import TimeSeriesChart from "./TimeSeriesChart";
 
