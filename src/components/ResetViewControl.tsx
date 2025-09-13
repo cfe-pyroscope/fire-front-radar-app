@@ -11,6 +11,7 @@ const ResetViewControl = () => {
     const containerRef = useRef<HTMLElement | null>(null);
     const userHasInteractedRef = useRef(false);
 
+    // ResetViewControl.tsx
     useEffect(() => {
         const control = L.Control.extend({
             onAdd: function () {
@@ -26,19 +27,17 @@ const ResetViewControl = () => {
 
                 container.onclick = () => {
                     if (container.classList.contains('disabled')) return;
-
                     map.stop();
 
-                    window.dispatchEvent(new CustomEvent('pin-clear'));
                     window.dispatchEvent(new CustomEvent('clear-area-selection'));
                     window.dispatchEvent(new CustomEvent('tooltip-clear'));
                     window.dispatchEvent(new CustomEvent('chart-clear'));
 
                     map.setView(INITIAL_MAP_CENTER, INITIAL_MAP_ZOOM);
 
+                    // after resetting, go back to disabled state until next interaction
                     container.classList.add('disabled');
                     userHasInteractedRef.current = false;
-
                 };
 
                 return container;
@@ -48,41 +47,12 @@ const ResetViewControl = () => {
         const resetControl = new control({ position: 'topleft' });
         map.addControl(resetControl);
 
-
         const dispatchDisableChartsBtn = () => {
             window.dispatchEvent(new CustomEvent("ffr:charts:disable"));
         };
-
         containerRef.current?.addEventListener("click", dispatchDisableChartsBtn);
 
-        // re-enable the charts button on user interaction with the map
-        const dispatchEnableChartsBtn = () => {
-            window.dispatchEvent(new CustomEvent("ffr:charts:enable"));
-        };
-        map.on("movestart", dispatchEnableChartsBtn);
-        map.on("zoomstart", dispatchEnableChartsBtn);
-
-
-        const syncWithCurrentView = () => {
-            const el = containerRef.current;
-            if (!el) return;
-
-            const atInitialZoom = map.getZoom() === INITIAL_MAP_ZOOM;
-            const atInitialCenter =
-                map.getCenter().distanceTo(L.latLng(INITIAL_MAP_CENTER)) < 1; // ~1m tolerance
-
-            const atInitial = atInitialZoom && atInitialCenter;
-
-            el.classList.toggle("disabled", atInitial);
-            userHasInteractedRef.current = !atInitial;
-        };
-
-        syncWithCurrentView();
-
-        map.on("moveend", syncWithCurrentView);
-        map.on("zoomend", syncWithCurrentView);
-
-
+        // --- Enable logic ---
         const enableButton = () => {
             if (!userHasInteractedRef.current) {
                 userHasInteractedRef.current = true;
@@ -90,13 +60,26 @@ const ResetViewControl = () => {
             }
         };
 
+        // 1) User moves/zooms the map
         map.on('movestart', enableButton);
         map.on('zoomstart', enableButton);
+
+        // 2) Custom events for selections
+        const onExternalEnable = () => enableButton();
+        window.addEventListener('ffr:reset:enable', onExternalEnable);
+
+        // 3) (Optional) If your tooltip control emits one of these, we’ll catch it
+        window.addEventListener('tooltip-show', onExternalEnable);
+        window.addEventListener('tooltip:selected', onExternalEnable);
 
         return () => {
             map.removeControl(resetControl);
             map.off('movestart', enableButton);
             map.off('zoomstart', enableButton);
+            window.removeEventListener('ffr:reset:enable', onExternalEnable);
+            window.removeEventListener('tooltip-show', onExternalEnable);
+            window.removeEventListener('tooltip:selected', onExternalEnable);
+            containerRef.current?.removeEventListener("click", dispatchDisableChartsBtn);
         };
     }, [map]);
 

@@ -92,77 +92,38 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
     }, []);
 
 
+    // Map a normalized t∈[0,1] to a palette color, using your thresholds
+    function paletteColorFor(indexSel: 'pof' | 'fopi', t: number) {
+        const PALETTE_5 = getPalette('official_5');
+        const tt =
+            indexSel === 'fopi'
+                ? [0.20, 0.40, 0.60, 0.80, 1]
+                // pof thresholds mapped into normalized t-space; 0.050 => Extreme (t=1)
+                : [0.0025 / 0.045, 0.0075 / 0.045, 0.015 / 0.045, 0.030 / 0.045, 1];
+
+        const x = Math.max(0, Math.min(1, t));
+        if (x === 0) return '#ffffff';
+        if (x <= tt[0]) return PALETTE_5[0]; // Low
+        if (x <= tt[1]) return PALETTE_5[1]; // Medium
+        if (x <= tt[2]) return PALETTE_5[2]; // High
+        if (x <= tt[3]) return PALETTE_5[3]; // Very High
+        return PALETTE_5[4];                 // Extreme
+    }
+
+    function hexToRgba(hex: string, alpha = 0.25) {
+        const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        if (!m) return hex;
+        const r = parseInt(m[1], 16);
+        const g = parseInt(m[2], 16);
+        const b = parseInt(m[3], 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+
     const option: EChartsOption = useMemo(() => {
         const timestamps = data?.timestamps ?? [];
         const mean = data?.mean ?? [];
         const median = data?.median ?? [];
-
-        // Clamp helper
-        const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
-
-        /**
-         * Build a vertical gradient for the area fill.
-         * - Lighter at y=0, darker at y=1 (palette reversed).
-         * - FOPI: evenly distributed 0..1 across the local area height.
-         * - POF: anything > 0.05 should be darkest; compute where 0.05 sits
-         *        relative to the current series max (visible data).
-         */
-        const makeAreaGradient = (
-            idx: 'pof' | 'fopi',
-            colors: string[],
-            axisMin: number,
-            axisMax: number
-        ) => {
-            // bottom (0) = light, top (1) = dark
-            const palette = colors;
-            const range = Math.max(1e-9, axisMax - axisMin);
-            const toLocal = (y: number) => clamp01((y - axisMin) / range); // 0 bottom → 1 top
-            const darkest = palette[palette.length - 1];
-            const n = palette.length;
-
-            if (idx === 'pof') {
-                const t = toLocal(0.05); // threshold position in [0..1], 0 bottom → 1 top
-
-                // Threshold above the visible range → only the 9-color gradient
-                if (t >= 1) {
-                    const stops = palette.map((c, i) => ({
-                        offset: n === 1 ? 1 : i / (n - 1),
-                        color: c,
-                    }));
-                    return new echarts.graphic.LinearGradient(0, 1, 0, 0, stops);
-                }
-
-                // Entire range above threshold → solid darkest
-                if (t <= 0) {
-                    return new echarts.graphic.LinearGradient(0, 1, 0, 0, [
-                        { offset: 0, color: darkest },
-                        { offset: 1, color: darkest },
-                    ]);
-                }
-
-                // Pack the light→dark gradient into [0 .. t] (bottom .. threshold),
-                // then hard switch to darkest for [t .. 1] (threshold .. top).
-                const belowStops = palette.map((c, i) => ({
-                    offset: n === 1 ? t : (t * i) / (n - 1),
-                    color: c,
-                }));
-
-                return new echarts.graphic.LinearGradient(0, 1, 0, 0, [
-                    ...belowStops,
-                    { offset: t, color: darkest },
-                    { offset: 1, color: darkest },
-                ]);
-            }
-
-            // FOPI: evenly split bottom→top
-            const stops = palette.map((c, i) => ({
-                offset: n === 1 ? 1 : i / (n - 1),
-                color: c,
-            }));
-            return new echarts.graphic.LinearGradient(0, 1, 0, 0, stops);
-        };
-
-        const colors = getPalette('official_5');
 
         const nums = (arr: (number | null)[]) =>
             arr.filter((v): v is number => typeof v === 'number');
@@ -178,52 +139,21 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
         } else {
             minShown = minMedian;
         }
-
         if (!isFinite(minShown)) minShown = 0;
 
-        // y-axis baseline
+        // y-axis baseline (also used by area origin)
         const axisMin = Math.max(0, minShown * 0.95);
 
         const maxMean = Math.max(0, ...nums(mean));
         const maxMedian = Math.max(0, ...nums(median));
 
-        let maxShown = 0;
-        if (seriesMode === 'both') {
-            maxShown = Math.max(maxMean, maxMedian);
-        } else if (seriesMode === 'mean') {
-            maxShown = maxMean;
-        } else {
-            maxShown = maxMedian;
-        }
-
-        // Per-series extents (used only for gradients)
-        const extent = (arr: (number | null)[]) => {
-            const x = nums(arr);
-            return x.length
-                ? { min: Math.min(...x), max: Math.max(...x) }
-                : { min: NaN, max: NaN };
+        const norm = (idx: 'pof' | 'fopi', v: number) => {
+            if (!Number.isFinite(v) || v <= 0) return 0;
+            return idx === 'pof' ? Math.min(v / 0.05, 1) : Math.min(v, 1);
         };
-        const safe = (v: number, fallback: number) =>
-            Number.isFinite(v) ? v : fallback;
 
-        const meanExt = extent(mean);
-        const medianExt = extent(median);
-
-        const mkSeriesArea = (seriesMin: number, seriesMax: number) =>
-            area
-                ? {
-                    areaStyle: {
-                        opacity: 1,
-                        // Anchor the fill to the chart y-min so the area baseline is stable.
-                        origin: axisMin,
-                        // But compute the gradient mapping from this series' own min/max.
-                        color: makeAreaGradient(indexSel, colors, seriesMin, seriesMax),
-                    },
-                }
-                : {};
-
-        const meanColor = '#8a3b00';
-        const medianColor = '#0a5f65';
+        const meanAreaFill = hexToRgba(paletteColorFor(indexSel, norm(indexSel, maxMean)), 1);
+        const medianAreaFill = hexToRgba(paletteColorFor(indexSel, norm(indexSel, maxMedian)), 1);
 
         const common = {
             type: 'line' as const,
@@ -233,19 +163,18 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
             connectNulls: true,
         };
 
-        const series: any[] = [];
+        const meanColor = '#8a3b00';
+        const medianColor = '#0a5f65';
 
+        const series: any[] = [];
         if (seriesMode === 'both' || seriesMode === 'mean') {
             series.push({
                 name: 'Mean',
                 data: mean,
                 ...common,
-                ...mkSeriesArea(
-                    Math.max(0, safe(meanExt.min, axisMin)),
-                    Math.max(1e-9, safe(meanExt.max, maxShown))
-                ),
                 lineStyle: { width: 2, color: meanColor },
                 itemStyle: { color: meanColor },
+                ...(area ? { areaStyle: { origin: axisMin, color: meanAreaFill } } : {}),
             });
         }
         if (seriesMode === 'both' || seriesMode === 'median') {
@@ -253,12 +182,9 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
                 name: 'Median',
                 data: median,
                 ...common,
-                ...mkSeriesArea(
-                    Math.max(0, safe(medianExt.min, axisMin)),
-                    Math.max(1e-9, safe(medianExt.max, maxShown))
-                ),
                 lineStyle: { width: 2, color: medianColor },
                 itemStyle: { color: medianColor },
+                ...(area ? { areaStyle: { origin: axisMin, color: medianAreaFill } } : {}),
             });
         }
 
@@ -269,8 +195,9 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
             tooltip: {
                 trigger: 'axis',
                 axisPointer: { type: 'line' },
-                formatter: (params: any) => {
-                    const header = toNiceDateLong(params[0].axisValue); // format the date
+                formatter: (params: any[]) => {
+                    if (!params?.length) return '';
+                    const header = toNiceDateLong(params[0].axisValue);
                     const lines = params.map((p: any) => {
                         const val = typeof p.data === 'number' ? p.data.toFixed(4) : '';
                         return `${p.marker}${p.seriesName}: ${val}`;
@@ -280,8 +207,10 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
             },
             legend: { top: 50 },
             toolbox: {
+                iconStyle: { borderColor: '#228be6', borderCap: 'round', borderWidth: '1' },
                 right: 16,
                 feature: {
+                    dataView: { readOnly: false },
                     dataZoom: { yAxisIndex: 'none' },
                     restore: {},
                     saveAsImage: {},
@@ -297,7 +226,7 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
             yAxis: {
                 type: 'value',
                 name: indexSel === 'pof' ? 'POF' : 'FOPI',
-                min: Math.max(0, minShown * 0.95),
+                min: axisMin, // keep consistent with areaStyle.origin
                 max: (val: any) => Math.max(1e-6, Number(val.max)),
                 axisLabel: { formatter: (val: number) => val.toFixed(4) },
             },
@@ -305,37 +234,25 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
                 { type: 'inside', start: 0, end: 100 },
                 {
                     type: 'slider',
-                    start: 0,
-                    end: 100,
-                    height: 30,
-                    bottom: 10,
+                    start: 0, end: 100, height: 30, bottom: 10,
                     borderColor: 'transparent',
-                    backgroundColor: '#dee2e6',          // light grey track
-                    dataBackground: {
-                        lineStyle: { color: '#868e96' },      // grey outline of data
-                        areaStyle: { color: '#f1f3f5' },      // light grey fill
-                    },
-                    fillerColor: '#ced4da66', // mid grey for selected range
-                    handleStyle: {
-                        color: '#868e96',                     // darker grey handles
-                        borderColor: '#495057',
-                    },
-                    moveHandleStyle: {
-                        color: '#aaa',                     // lighter grey move handle
-                        opacity: 0.7,
-                    },
+                    /* backgroundColor: '#dee2e6',
+                    dataBackground: { lineStyle: { color: '#868e96' }, areaStyle: { color: '#f1f3f5' } },
+                    fillerColor: '#ced4da66',
+                    handleStyle: { color: '#868e96', borderColor: '#495057' },
+                    moveHandleStyle: { color: '#aaa', opacity: 0.7 }, */
                     labelFormatter: (val: any) => {
                         const i = Number(val);
                         const iso = timestamps[i];
                         return iso ? toNiceDateLong(iso) : '';
                     },
-
                 },
             ],
             series,
         };
         return opt;
     }, [data, seriesMode, smooth, area, sampling, indexSel]);
+
 
 
     useEffect(() => {
@@ -352,9 +269,8 @@ const ChartTimeSeries: React.FC<Props> = ({ index = 'pof', bbox = null }) => {
     ) => {
         if (Array.isArray(geo)) {
             // Point: [lon, lat]
-            if (geo.length === 2) {
-                const [lon, lat] = geo;
-                return `point ${dms(lat, 'N', 'S')}, ${dms(lon, 'E', 'W')}`;
+            if (geo.length > 4) {
+                console.log("Logic to be implemented")
             }
             // BBox: [minLon, minLat, maxLon, maxLat]
             if (geo.length === 4) {

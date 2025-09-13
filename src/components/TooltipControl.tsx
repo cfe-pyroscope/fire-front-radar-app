@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useMap } from "react-leaflet";
 import L from "leaflet";
 import ReactDOMServer from "react-dom/server";
-import { IconMessage } from "@tabler/icons-react";
+import { IconMapPin } from "@tabler/icons-react";
 import { getTooltipValue } from "../api/fireIndexApi";
 import { formatDate } from "../utils/date";
 import { getPalette } from "../utils/legend";
@@ -33,9 +33,6 @@ const TooltipControl = ({ indexName, baseTime, forecastTime, mode }: Props) => {
     const lastClickLatLngRef = useRef<L.LatLng | null>(null);
 
 
-    const PALETTE = getPalette('official');
-    const PALETTE_5 = getPalette('official_5');
-
     const clamp = (n: number, a = 0, b = 1) => Math.min(b, Math.max(a, n));
 
     /** Normalize value to 0..1 based on index rules. */
@@ -50,7 +47,7 @@ const TooltipControl = ({ indexName, baseTime, forecastTime, mode }: Props) => {
 
     /** Pick official_5 color using real thresholds; t=0 (measured 0) => white; null stays gray via caller */
     function colorFromPalette(t: number) {
-        const palette = PALETTE_5;
+        const PALETTE_5 = getPalette('official_5');
         const tt =
             indexRef.current === "fopi"
                 ? [0.20, 0.40, 0.60, 0.80, 1]
@@ -61,11 +58,11 @@ const TooltipControl = ({ indexName, baseTime, forecastTime, mode }: Props) => {
 
         if (x === 0) return "#ffffff";        // measured value 0 → "No risk" → white
 
-        if (x <= tt[0]) return palette[0];    // Low
-        if (x <= tt[1]) return palette[1];    // Medium
-        if (x <= tt[2]) return palette[2];    // High
-        if (x <= tt[3]) return palette[3];    // Very High
-        return palette[4];                    // Extreme (incl. POF ≥ 0.050)
+        if (x <= tt[0]) return PALETTE_5[0];    // Low
+        if (x <= tt[1]) return PALETTE_5[1];    // Medium
+        if (x <= tt[2]) return PALETTE_5[2];    // High
+        if (x <= tt[3]) return PALETTE_5[3];    // Very High
+        return PALETTE_5[4];                    // Extreme (incl. POF ≥ 0.050)
     }
 
 
@@ -111,6 +108,7 @@ const TooltipControl = ({ indexName, baseTime, forecastTime, mode }: Props) => {
 
     /** Build a discrete gradient string from the palette for the bar. */
     function paletteGradient() {
+        const PALETTE = getPalette('official');
         const n = PALETTE.length - 1;
         return PALETTE.map((c, i) => {
             const p = Math.round((i / n) * 100);
@@ -156,10 +154,10 @@ const TooltipControl = ({ indexName, baseTime, forecastTime, mode }: Props) => {
                 L.DomEvent.disableClickPropagation(container);
                 L.DomEvent.disableScrollPropagation(container);
 
-                container.title = "Activate tooltip information";
+                container.title = "Get information about a point";
                 container.innerHTML = ReactDOMServer.renderToString(
                     <div className="tooltip-control-content">
-                        <IconMessage size={18} />
+                        <IconMapPin size={18} />
                     </div>
                 );
                 containerRef.current = container;
@@ -175,38 +173,41 @@ const TooltipControl = ({ indexName, baseTime, forecastTime, mode }: Props) => {
                     const grad = paletteGradient();
 
                     const html = `
-          <div class="fire-tip">
-            <div class="tip-header">
-              <div class="tip-title">
-                <span class="flame" aria-hidden="true">🔥</span>
-                <span class="index">${data.index.toUpperCase()}</span>
-                <span class="param">· FIRE RISK</span>
-              </div>
-              <div class="chip" style="--chip-bg:${bg};--chip-fg:${fg}" title="${v ?? "N/A"}">
-                ${lbl}
-                <span class="chip-value">${v == null ? "N/A" : v.toFixed(3)}</span>
-              </div>
-            </div>
+                                <div class="fire-tip">
+                                    <div class="tip-header">
+                                    <div class="tip-title">
+                                        <span class="flame" aria-hidden="true">🔥</span>
+                                        <span class="index">${data.index.toUpperCase()}</span>
+                                        <span class="param">· FIRE RISK</span>
+                                    </div>
+                                    <div class="chip" style="--chip-bg:${bg};--chip-fg:${fg}" title="${v ?? "N/A"}">
+                                        ${lbl}
+                                        <span class="chip-value">${v == null ? "N/A" : v.toFixed(3)}</span>
+                                    </div>
+                                    </div>
 
-            <div class="risk-bar" style="--risk-gradient: linear-gradient(90deg, ${grad});" aria-label="Risk ${pct}%">
-              <span style="width:${pct}%"></span>
-            </div>
+                                    <div class="risk-bar" style="--risk-gradient: linear-gradient(90deg, ${grad});" aria-label="Risk ${pct}%">
+                                    <span style="width:${pct}%"></span>
+                                    </div>
 
-            <div class="tip-grid">
-              <div class="label">Base</div>
-              <div class="value">${formatDate(data.time.base_time, "UTC")}</div>
+                                    <div class="tip-grid">
+                                    <div class="label">Base</div>
+                                    <div class="value">${formatDate(data.time.base_time, "UTC")}</div>
 
-              <div class="label">Forecast</div>
-              <div class="value">${formatDate(data.time.forecast_time, "UTC")}</div>
+                                    <div class="label">Forecast</div>
+                                    <div class="value">${formatDate(data.time.forecast_time, "UTC")}</div>
 
-              <div class="label">Lon/Lat</div>
-              <div class="value mono">${data.point.lon.toFixed(6)}, ${data.point.lat.toFixed(6)}</div>
+                                    <div class="label">Lat/Lon</div>
+                                    <div class="value mono">
+                                            ${Math.abs(data.point.lat).toFixed(2)}${data.point.lat >= 0 ? 'N°' : 'S°'},
+                                            ${Math.abs(data.point.lon).toFixed(2)}${data.point.lon >= 0 ? 'E°' : 'W°'}
+                                    </div>
 
-              <div class="label">EPSG:3857</div>
-              <div class="value mono">${data.point.input_epsg3857.x.toFixed(2)}, ${data.point.input_epsg3857.y.toFixed(2)}</div>
-            </div>
-          </div>
-        `;
+                                    <!-- <div class="label">EPSG:3857</div>
+                                    <div class="value mono">${data.point.input_epsg3857.y.toFixed(2)}, ${data.point.input_epsg3857.x.toFixed(2)}</div> -->
+                                    </div>
+                                </div>
+                                `;
                     popup.setContent(html);
                 };
 
@@ -336,36 +337,39 @@ const TooltipControl = ({ indexName, baseTime, forecastTime, mode }: Props) => {
                 const grad = paletteGradient();
 
                 const html = `
-        <div class="fire-tip">
-          <div class="tip-header">
-            <div class="tip-title">
-              <span class="flame" aria-hidden="true">🔥</span>
-              <span class="index">${data.index.toUpperCase()}</span>
-              <span class="param">· RISK</span>
-            </div>
-            <div class="chip" style="--chip-bg:${bg};--chip-fg:${fg}" title="${v ?? "N/A"}">
-              ${lbl}
-              <span class="chip-value">${v == null ? "N/A" : v.toFixed(3)}</span>
-            </div>
-          </div>
-          <div class="risk-bar" style="--risk-gradient: linear-gradient(90deg, ${grad});" aria-label="Risk ${pct}%">
-            <span style="width:${pct}%"></span>
-          </div>
-          <div class="tip-grid">
-            <div class="label">Base</div>
-            <div class="value">${formatDate(data.time.base_time, "UTC")}</div>
+                            <div class="fire-tip">
+                            <div class="tip-header">
+                                <div class="tip-title">
+                                <span class="flame" aria-hidden="true">🔥</span>
+                                <span class="index">${data.index.toUpperCase()}</span>
+                                <span class="param">· RISK</span>
+                                </div>
+                                <div class="chip" style="--chip-bg:${bg};--chip-fg:${fg}" title="${v ?? "N/A"}">
+                                ${lbl}
+                                <span class="chip-value">${v == null ? "N/A" : v.toFixed(3)}</span>
+                                </div>
+                            </div>
+                            <div class="risk-bar" style="--risk-gradient: linear-gradient(90deg, ${grad});" aria-label="Risk ${pct}%">
+                                <span style="width:${pct}%"></span>
+                            </div>
+                            <div class="tip-grid">
+                                <div class="label">Base</div>
+                                <div class="value">${formatDate(data.time.base_time, "UTC")}</div>
 
-            <div class="label">Forecast</div>
-            <div class="value">${formatDate(data.time.forecast_time, "UTC")}</div>
+                                <div class="label">Forecast</div>
+                                <div class="value">${formatDate(data.time.forecast_time, "UTC")}</div>
 
-            <div class="label">Lon/Lat</div>
-            <div class="value mono">${data.point.lon.toFixed(6)}, ${data.point.lat.toFixed(6)}</div>
+                                <div class="label">Lan/Lon</div>
+                                <div class="value mono">
+                                        ${Math.abs(data.point.lat).toFixed(2)}${data.point.lat >= 0 ? 'N°' : 'S°'},
+                                        ${Math.abs(data.point.lon).toFixed(2)}${data.point.lon >= 0 ? 'E°' : 'W°'}
+                                </div>
 
-            <div class="label">EPSG:3857</div>
-            <div class="value mono">${data.point.input_epsg3857.x.toFixed(2)}, ${data.point.input_epsg3857.y.toFixed(2)}</div>
-          </div>
-        </div>
-      `;
+                                /* <div class="label">EPSG:3857</div>
+                                <div class="value mono">${data.point.input_epsg3857.x.toFixed(2)}, ${data.point.input_epsg3857.y.toFixed(2)}</div> */
+                            </div>
+                            </div>
+                        `;
                 popup.setContent(html);
             } catch (err: any) {
                 if (ac.signal.aborted) return;
