@@ -321,6 +321,26 @@ export async function getTooltipValue(
 }
 
 
+export type ForecastHorizonResponse = {
+    base_date: string | null;
+    bbox_epsg3857?: string | null;
+    bbox_epsg4326?: [number, number, number, number] | null; // tuple in lon/lat
+    pof_forecast: number[];
+    fopi_forecast: number[];
+    axes_pof: [number, number];
+    axes_fopi: [number, number];
+};
+
+
+export async function getForecastHorizon(
+    bbox?: string | null,
+    signal?: AbortSignal,
+): Promise<ForecastHorizonResponse> {
+    let url = `${API_BASE_URL}/api/forecast_horizon?format=json`;
+    if (bbox) url += `&bbox=${encodeURIComponent(bbox)}`;
+    return fetchJSON<ForecastHorizonResponse>(url, signal);
+}
+
 
 export type TimeSeriesByBaseTime = {
     index: 'pof' | 'fopi';
@@ -357,13 +377,37 @@ export async function getTimeSeries(
 }
 
 
-export async function getForecastHorizon(
-    indexName: IndexName,
+
+export type ExpectedFiresByDate = {
+    index: 'pof' | 'fopi';
+    mode: 'by_date';
+    stat: string[]; // ["sum"]
+    bbox_epsg3857?: string | null;
+    bbox_epsg4326?: [number, number, number, number] | null; // [lat_min, lon_min, lat_max, lon_max]
+    dates: string[]; // "YYYY-MM-DD"
+    expected_sum: number[]; // sum of probabilities per UTC day
+    cumulative_expected: number[]; // running sum (helper for diagnostics/plots)
+    notes?: string;
+};
+
+export async function getExpectedFiresByDate(
+    indexName: 'pof' | 'fopi',
     bbox?: string | null,
     signal?: AbortSignal,
-): Promise<ForecastTime[]> {
-    console.log(indexName);
-    let url = `${API_BASE_URL}/api/forecast_horizon?format=json`;
+    startBase?: string | Date | null,
+    endBase?: string | Date | null
+): Promise<ExpectedFiresByDate> {
+    let url = `${API_BASE_URL}/api/${indexName}/expected_fires?format=json`;
     if (bbox) url += `&bbox=${encodeURIComponent(bbox)}`;
-    return fetchJSON<ForecastTime[]>(url, signal);
+
+    const toIsoUtc = (d: string | Date) => {
+        const dd = d instanceof Date ? d : new Date(d);
+        // Force to UTC midnight → "YYYY-MM-DDT00:00:00.000Z"
+        return new Date(Date.UTC(dd.getFullYear(), dd.getMonth(), dd.getDate())).toISOString();
+    };
+
+    if (startBase) url += `&start_base=${encodeURIComponent(toIsoUtc(startBase))}`;
+    if (endBase) url += `&end_base=${encodeURIComponent(toIsoUtc(endBase))}`;
+
+    return fetchJSON<ExpectedFiresByDate>(url, signal);
 }

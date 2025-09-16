@@ -2,11 +2,14 @@ import React, { useEffect } from "react";
 import { Drawer, Box, Paper, Stack, ActionIcon } from "@mantine/core";
 import { Carousel } from "@mantine/carousel";
 import { IconX } from "@tabler/icons-react";
+import ExpectedFiresContainer from "./ExpectedFiresContainer";
+import ForecastHorizon from './ForecastHorizon';
 import TimeSeriesContainer from "./TimeSeriesContainer";
+import { WheelGesturesPlugin } from "embla-carousel-wheel-gestures";
 
 import '@mantine/carousel/styles.css';
 import '../css/ChartSideSwiper.css';
-import ForecastHorizonComparison from './ForecastHorizonComparison';
+
 
 type Props = {
   opened: boolean;
@@ -57,7 +60,7 @@ export default function ChartSideSwiper({
       className="sideChartSwiper"
       styles={{
         content: { backgroundColor: "transparent", boxShadow: "none", padding: 0 },
-        body: { overflow: "visible" },
+        body: { overflow: "hidden" },
       }}
       zIndex={500}
     >
@@ -79,7 +82,13 @@ export default function ChartSideSwiper({
           loop: true,
           dragFree: false,
           align: 'center',
+          axis: "y",
         }}
+        plugins={[
+          WheelGesturesPlugin({
+            forceWheelAxis: "y",
+          }),
+        ]}
         height="100%"                  // fills Drawer body
         slideSize="var(--slide-size)"  // height of each slide
       >
@@ -88,12 +97,20 @@ export default function ChartSideSwiper({
             <Paper className="sideChartSwiper__card" withBorder>
               <Stack className="sideChartSwiper__stack" gap="xs">
                 {n === 1 ? (
-                  <TimeSeriesContainer
+                  <ForecastHorizon
                     index={indexName}
                     bbox={bbox}
                   />
                 ) : n === 2 ? (
-                  <ForecastHorizonComparison index={indexName} bbox={bbox} />
+                  <TimeSeriesContainer
+                    index={indexName}
+                    bbox={bbox}
+                  />
+                ) : n === 3 ? (
+                  <ExpectedFiresContainer
+                    index={indexName}
+                    bbox={bbox}
+                  />
                 ) : (
                   <>
                     <strong>Chart {n}</strong>

@@ -1,85 +1,59 @@
 // ChartTimeSeries.tsx — fixed
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { getTimeSeries } from '../api/fireIndexApi';
 import * as echarts from 'echarts';
-import { getForecastHorizon } from '../api/fireIndexApi';
 import type { EChartsOption } from 'echarts';
 import {
-  Button,
+  Box,
   Card,
-  Code,
   Group,
   Loader,
-  SegmentedControl,
   Stack,
-  Switch,
   Text,
   Title,
-  Tooltip as MantineTooltip,
-  Select,
-  Space,
 } from '@mantine/core';
-import HeatmapLegend from './HeatmapLegend';
+import { formatDate } from '../utils/date';
+import { formatBoundingBox } from '../utils/bounds';
+import { getForecastHorizon, type ForecastHorizonResponse } from '../api/fireIndexApi';
+
+
+
+type Props = {
+  index?: 'pof' | 'fopi';
+  bbox?: string | null;
+};
 
 const defaultProps: Required<Props> = {
   index: 'pof',
   bbox: null,
 };
 
-type Props = {
-  index?: 'pof' | 'fopi';
-  bbox?: string | null; // EPSG:3857 "minX,minY,maxX,maxY" (unencoded)
-};
-
-type ForecastHorizonLeadTimes = {
-  bbox?: string | null; // EPSG:3857 "minX,minY,maxX,maxY" or null for global
-  pof_forecast: (number | null)[];
-  fopi_forecast: (number | null)[];
-  axes_pof: (number | null)[];
-  axes_fopi: (number | null)[];
-};
-
-const ForecastHorizonComparison: React.FC<Props> = (props) => {
+const ForecastHorizon: React.FC<Props> = (props) => {
   const merged = { ...defaultProps, ...props };
 
   const [indexSel, setIndexSel] = useState<'pof' | 'fopi'>(merged.index);
   const [bboxSel, setBboxSel] = useState<string>(merged.bbox ?? '');
 
-  const leadTimes = [
-    '0d',
-    '1d',
-    '2d',
-    '3d',
-    '4d',
-    '5d',
-    '6d',
-    '7d',
-    '8d',
-    '9d',
-  ];
-
   const chartRef = useRef<HTMLDivElement | null>(null);
   const echartsRef = useRef<echarts.EChartsType | null>(null);
 
-  const [data, setData] = useState<ForecastHorizonLeadTimes | null>(null);
+  const [data, setData] = useState<ForecastHorizonResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  // Keep internal controls in sync with incoming props if they change
   useEffect(() => {
     setIndexSel(merged.index);
     setBboxSel(merged.bbox ?? '');
   }, [merged.index, merged.bbox]);
 
-  // fetch data
+
   useEffect(() => {
     const abort = new AbortController();
     setLoading(true);
     setErr(null);
 
-    getForecastHorizon(indexSel, bboxSel || null, abort.signal)
+    getForecastHorizon(bboxSel || null, abort.signal)
       .then((res) => {
-        setData(res as ForecastHorizonLeadTimes);
+        setData(res); // <-- no cast
       })
       .catch((e) => {
         if (abort.signal.aborted) return;
@@ -91,7 +65,7 @@ const ForecastHorizonComparison: React.FC<Props> = (props) => {
       });
 
     return () => abort.abort();
-  }, []);
+  }, [indexSel, bboxSel]); // <-- important
 
   useEffect(() => {
     if (!chartRef.current) return;
@@ -108,50 +82,38 @@ const ForecastHorizonComparison: React.FC<Props> = (props) => {
     };
   }, []);
 
+  const leadTimes = useMemo(
+    () => ['0d', '1d', '2d', '3d', '4d', '5d', '6d', '7d', '8d', '9d'],
+    []
+  );
+
   const option: EChartsOption = useMemo(() => {
-    const opt: EChartsOption = {
+    const formatter = (value: number | string) => Number(value).toFixed(3);
+
+    return {
       title: {
-        text: 'Forecast Horizon Comparison',
+        text: 'Forecast Horizon',
         subtext: 'POF and FOPI forecasts for different lead times',
         left: 'center',
       },
-      tooltip: {
-        trigger: 'axis',
-      },
-      legend: {
-        data: ['POF', 'FOPI'],
-        bottom: 0,
-      },
-      grid: {
-        left: '10%',
-        right: '10%',
-        bottom: '15%',
-        containLabel: true,
-      },
-      xAxis: {
-        type: 'category',
-        data: leadTimes,
-        name: 'Lead Time',
-      },
+      tooltip: { trigger: 'axis' },
+      legend: { data: ['POF', 'FOPI'], top: 70, left: 'center' },
+      grid: { left: 0, right: 40, bottom: 0, top: 120, containLabel: true },
+      xAxis: { type: 'category', data: leadTimes, name: 'Lead Time' },
       yAxis: [
         {
           type: 'value',
           name: 'FOPI',
-          
-          min: data?.axes_fopi[0],
-          max: data?.axes_fopi[1],
-           axisLabel: {
-    formatter: (value) => value.toFixed(3)
-  }
+          min: data?.axes_fopi?.[0],
+          max: data?.axes_fopi?.[1],
+          axisLabel: { formatter },
         },
         {
           type: 'value',
           name: 'POF',
-          min: data?.axes_pof[0],
-          max: data?.axes_pof[1],
-           axisLabel: {
-    formatter: (value) => value.toFixed(3) 
-  }
+          min: data?.axes_pof?.[0],
+          max: data?.axes_pof?.[1],
+          axisLabel: { formatter },
         },
       ],
       series: [
@@ -161,8 +123,10 @@ const ForecastHorizonComparison: React.FC<Props> = (props) => {
           smooth: true,
           symbol: 'circle',
           symbolSize: 8,
-          data: data?.pof_forecast,
+          data: data?.pof_forecast ?? [],
           yAxisIndex: 1,
+          lineStyle: { color: '#5070DD' },
+          itemStyle: { color: '#5070DD' },
         },
         {
           name: 'FOPI',
@@ -170,33 +134,54 @@ const ForecastHorizonComparison: React.FC<Props> = (props) => {
           smooth: true,
           symbol: 'diamond',
           symbolSize: 8,
-          data: data?.fopi_forecast,
+          data: data?.fopi_forecast ?? [],
           yAxisIndex: 0,
+          lineStyle: { color: '#B6D634' },
+          itemStyle: { color: '#B6D634' },
         },
       ],
-    };
-
-    return opt;
-  }, [data]);
+    } satisfies EChartsOption;
+  }, [data, leadTimes]);
 
   useEffect(() => {
     if (!echartsRef.current) return;
     echartsRef.current.setOption(option, { notMerge: true, lazyUpdate: true });
   }, [option]);
 
-  console.log(chartRef);
-  console.log(data);
-  console.log(option);
+  const whereCoords = useMemo(() => {
+    return formatBoundingBox(data?.bbox_epsg4326, bboxSel);
+  }, [data?.bbox_epsg4326, bboxSel]);
+
+  const formattedDate = data?.base_date ? formatDate(data.base_date, 'UTC') : '—';
+
+  const explanation = useMemo(() => {
+    return (
+      <>
+        This chart compares POF and FOPI forecast confidence
+        for <strong>{formattedDate}</strong>  across 0–9 day lead times. It illustrates how forecast confidence changes as the horizon increases for the selected area {whereCoords}. Confidence typically decreases with longer lead times, helping assess the reliability of forecasts for planning and response.
+        <br />The scale runs from <strong>0</strong> to <strong>1</strong>. Values above <strong>0.05</strong> for POF and <strong>0.8</strong> for FOPI indicate an extreme condition.
+      </>
+    );
+  }, [whereCoords, formattedDate]);
+
 
   return (
     <Stack p="md" gap="md">
-      <Title order={3}>Forecast Horizon Comparison</Title>
-      <Text size="sm" c="dimmed"  style={{ maxWidth: 600 }}>
-        This chart compares POF and FOPI forecast confidence across 0–9 day lead
-        times, showing how predictions change as the forecast horizon increases.
-        It highlights how confidence decays with time, helping assess
-        reliability for planning and response.
-      </Text>
+      <Title order={3}>Forecast Horizon</Title>
+      <Box
+        component="p"
+        c="dimmed"
+        fz="sm"
+        style={{
+          whiteSpace: "normal",
+          wordBreak: "break-word",
+          overflowWrap: "anywhere",
+          lineHeight: 1.45,
+          maxWidth: "100%",
+        }}
+      >
+        {explanation}
+      </Box>
 
       <Card
         withBorder
@@ -233,9 +218,8 @@ const ForecastHorizonComparison: React.FC<Props> = (props) => {
         <div ref={chartRef} style={{ width: '100%', height: '100%' }} />
       </Card>
 
-      <Space h="xs" />
     </Stack>
   );
 };
 
-export default ForecastHorizonComparison;
+export default ForecastHorizon;

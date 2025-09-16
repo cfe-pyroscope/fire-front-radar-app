@@ -1,19 +1,18 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { getTimeSeries, type TimeSeriesByBaseTime, getAvailableDates } from "../api/fireIndexApi";
-
 import {
     Box,
     Card,
     Group,
     Stack,
-    Switch,
     Title,
     Space,
+    Switch
 } from "@mantine/core";
 
-import TimeSeriesMenu from "./TimeSeriesMenu";
-import TimeSeriesChart from "./TimeSeriesChart";
-import { formatBoundingBox } from '../utils/bounds';
+import ExpectedFiresMenu from "./ExpectedFiresMenu";
+import ExpectedFiresChart from "./ExpectedFiresChart";
+
+import { getExpectedFiresByDate, type ExpectedFiresByDate, getAvailableDates } from "../api/fireIndexApi";
 
 // --- Props -------------------------------------------------------------------
 type Props = {
@@ -21,11 +20,14 @@ type Props = {
     bbox?: string | null; // EPSG:3857 "minX,minY,maxX,maxY"
 };
 
-const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null }) => {
+const ExpectedFiresContainer: React.FC<Props> = ({ index = "pof", bbox = null }) => {
     // Controls that affect fetching
     const [indexSel, setIndexSel] = useState<"pof" | "fopi">(index);
     const [bboxSel] = useState<string>(bbox ?? "");
     const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
+    const [waterfall, setWaterfall] = useState(false);
+
+    // network control
     const fetchAbortRef = useRef<AbortController | null>(null);
 
     // manage DatePicker
@@ -38,7 +40,6 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null }) =>
         return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     };
 
-
     useEffect(() => {
         // whenever index changes, (re)load available dates
         if (datesAbortRef.current) datesAbortRef.current.abort();
@@ -47,14 +48,13 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null }) =>
 
         setDatesLoading(true);
         setAvailableDates(null);
-
         setData(null);
         setErr(null);
 
         (async () => {
             try {
                 const raw = await getAvailableDates(indexSel, abort.signal);
-                // expect the API to return ISO strings or timestamps; map to Date[]
+                // expect ISO strings or timestamps; map to Date[]
                 const dates = (raw ?? [])
                     .map((v: any) => new Date(v))
                     .filter((d: Date) => !Number.isNaN(d.getTime()))
@@ -85,40 +85,47 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null }) =>
     }, [indexSel]);
 
     // Data / network state
-    const [data, setData] = useState<TimeSeriesByBaseTime | null>(null);
+    const [data, setData] = useState<ExpectedFiresByDate | null>(null);
     const [loading, setLoading] = useState(false);
     const [err, setErr] = useState<string | null>(null);
 
-    // Presentation controls
-    const [smooth, setSmooth] = useState(true);
-    const [area, setArea] = useState(true);
-
-
     const whereCoords = useMemo(() => {
-        return formatBoundingBox(data?.bbox_epsg4326 as any, bboxSel);
+        const dms = (v: number, pos: string, neg: string, digits = 2) =>
+            `${Math.abs(v).toFixed(digits)}°${v >= 0 ? pos : neg}`;
+        const niceGeo = (
+            geo?: [number, number] | [number, number, number, number] | null,
+            bbox3857?: string | null
+        ) => {
+            if (Array.isArray(geo)) {
+                if (geo.length === 4) {
+                    const [minLon, minLat, maxLon, maxLat] = geo;
+                    return `area (SW → NE) ${dms(minLat, " N", " S")}, ${dms(minLon, " E", " W")} → ${dms(
+                        maxLat,
+                        " N",
+                        " S"
+                    )}, ${dms(maxLon, " E", " W")}`;
+                }
+            }
+            if (bbox3857) return "";
+            return "";
+        };
+        const where = niceGeo(data?.bbox_epsg4326 as any, bboxSel) || "";
+        return where ? where : "—";
     }, [data?.bbox_epsg4326, bboxSel]);
 
-
     const explanation = useMemo(() => {
-        return indexSel === "pof" ? (
+        return (
             <>
-                Line chart showing <strong>POF</strong> values for the selected area {whereCoords}.<br />The scale runs from{" "}
-                <strong>0</strong> to{" "}
-                <strong>1</strong>. Any value greater than <strong>0.05</strong>{" "}
-                indicates an <strong>extreme condition</strong>.
-            </>
-        ) : (
-            <>
-                Line chart showing <strong>FOPI</strong> values for the selected area {whereCoords}.<br />The scale runs from{" "}
-                <strong>0</strong> to{" "}
-                <strong>1</strong>. Any value greater than <strong>0.8</strong>{" "}
-                indicates an extreme condition.
+                Vertical bar chart showing <strong>expected number of fires</strong> (sum of cell
+                probabilities) by UTC <strong>date</strong> for the selected area {whereCoords}.<br />
+                This is an expected <em>count</em>, not a probability. Larger regions naturally
+                yield larger sums.
             </>
         );
-    }, [indexSel, whereCoords]);
+    }, [whereCoords]);
 
     // --- Fetch handler ----------------------------------------------------------
-    const fetchTimeSeries = async () => {
+    const fetchExpected = async () => {
         const [from, to] = dateRange;
         if (!from || !to) {
             setErr("Please select a start and end date.");
@@ -134,11 +141,11 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null }) =>
 
         try {
             const startUTC = toUTCDate(from); // 00:00:00Z
-            const endUTC = toUTCDate(to);   // 00:00:00Z
+            const endUTC = toUTCDate(to);     // 00:00:00Z
 
-            const res = await getTimeSeries(
+            const res = await getExpectedFiresByDate(
                 indexSel,
-                bboxSel,
+                bboxSel || null,
                 abort.signal,
                 startUTC,
                 endUTC
@@ -147,7 +154,7 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null }) =>
             if (!abort.signal.aborted) setData(res);
         } catch (e: any) {
             if (!abort.signal.aborted) {
-                setErr(e?.message ?? "Failed to load time series");
+                setErr(e?.message ?? "Failed to load expected fires");
                 setData(null);
             }
         } finally {
@@ -157,7 +164,7 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null }) =>
 
     return (
         <Stack p="md" gap="xs">
-            <Title order={3}>Fire Danger Time Series</Title>
+            <Title order={3}>Expected Fires (Sum by Date)</Title>
 
             <Box
                 component="p"
@@ -175,40 +182,33 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null }) =>
             </Box>
 
             <Card padding="xs" pl={0} pr={0}>
-                <TimeSeriesMenu
+                <ExpectedFiresMenu
                     indexSel={indexSel}
                     onIndexChange={setIndexSel}
                     dateRange={dateRange}
                     onDateRangeChange={setDateRange}
                     loading={loading}
-                    onLoadClick={fetchTimeSeries}
+                    onLoadClick={fetchExpected}
                     availableDates={availableDates ?? undefined}
                     datesLoading={datesLoading}
                 />
             </Card>
 
             <Card withBorder padding="xs" style={{ height: 520, position: "relative" }}>
-                <TimeSeriesChart
+                <ExpectedFiresChart
+                    key={`${indexSel}-${waterfall ? "wf" : "bar"}`}
                     data={data}
                     indexSel={indexSel}
-                    smooth={smooth}
-                    area={area}
-                    sampling="lttb"
                     height={520}
                     loading={loading}
                     error={err}
+                    waterfall={waterfall}
                 />
                 <Group gap="xs" wrap="wrap" justify="center" align="center" mt="xs">
                     <Switch
-                        checked={smooth}
-                        onChange={(e) => setSmooth(e.currentTarget.checked)}
-                        label="Smooth"
-                        color="#C0C8E5"
-                    />
-                    <Switch
-                        checked={area}
-                        onChange={(e) => setArea(e.currentTarget.checked)}
-                        label="Area fill"
+                        checked={waterfall}
+                        onChange={(e) => setWaterfall(e.currentTarget.checked)}
+                        label="Waterfall"
                         color="#C0C8E5"
                     />
                 </Group>
@@ -219,4 +219,4 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null }) =>
     );
 };
 
-export default TimeSeriesContainer;
+export default ExpectedFiresContainer;
