@@ -1,32 +1,38 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-    Box,
-    Card,
-    Group,
-    Stack,
-    Title,
-    Space,
-    Switch
-} from "@mantine/core";
+import { Box, Card, Group, Stack, Title, Space, Switch } from "@mantine/core";
 
-import ExpectedFiresMenu from "./ExpectedFiresMenu";
-import ExpectedFiresChart from "./ExpectedFiresChart";
+import ExceedanceFrequencyMenu from "./ExceedanceFrequencyMenu";
+import ExceedanceFrequencyChart from "./ExceedanceFrequencyChart";
 import { formatBoundingBox } from "../utils/bounds";
 
-import { getExpectedFiresByDate, type ExpectedFiresByDate, getAvailableDates } from "../api/fireIndexApi";
+import {
+    getExceedanceFrequency,
+    type ExceedanceFrequency,
+    getAvailableDates,
+} from "../api/fireIndexApi";
 
-
+// --- Props -------------------------------------------------------------------
 type Props = {
     index?: "pof" | "fopi";
     bbox?: string | null; // EPSG:3857 "minX,minY,maxX,maxY"
     onBoxChange?: (bbox: string | null) => void;
 };
 
-const ExpectedFiresContainer: React.FC<Props> = ({ index = "pof", bbox = null, onBoxChange = null }) => {
+
+const ExceedanceFrequencyContainer: React.FC<Props> = ({
+    index = "pof",
+    bbox = null,
+    onBoxChange = null,
+}) => {
     const [indexSel, setIndexSel] = useState<"pof" | "fopi">(index);
     const [bboxSel, setBoxSel] = useState<string>(bbox ?? "");
     const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
-    const [waterfall, setWaterfall] = useState(false);
+    const [cdf, setCdf] = useState(false); // toggle between CCDF (false) and CDF (true)
+
+    // Notify parent when bbox changes (if callback provided)
+    useEffect(() => {
+        if (onBoxChange) onBoxChange(bboxSel || null);
+    }, [bboxSel, onBoxChange]);
 
     // network control
     const fetchAbortRef = useRef<AbortController | null>(null);
@@ -86,7 +92,7 @@ const ExpectedFiresContainer: React.FC<Props> = ({ index = "pof", bbox = null, o
     }, [indexSel]);
 
     // Data / network state
-    const [data, setData] = useState<ExpectedFiresByDate | null>(null);
+    const [data, setData] = useState<ExceedanceFrequency | null>(null);
     const [loading, setLoading] = useState(false);
     const [err, setErr] = useState<string | null>(null);
 
@@ -94,19 +100,32 @@ const ExpectedFiresContainer: React.FC<Props> = ({ index = "pof", bbox = null, o
         return formatBoundingBox(data?.bbox_epsg4326 ?? null, bboxSel);
     }, [data?.bbox_epsg4326, bboxSel]);
 
+
     const explanation = useMemo(() => {
+        const totalCells =
+            typeof data?.overall?.total === "number" && data.overall.total > 0
+                ? ` (~${data.overall.total.toLocaleString()} pooled cells)`
+                : "";
+
+        const daysTotal =
+            Array.isArray(data?.by_date?.dates) ? data!.by_date.dates.length : 0;
+        const daysStr = daysTotal ? ` across ${daysTotal} day(s)` : "";
+
         return (
             <>
-                Vertical bar chart showing <strong>expected number of fires</strong> (sum of cell
-                probabilities) by UTC <strong>date</strong> for the selected area {whereCoords}.<br />
-                This is an expected <em>count</em>, not a probability. Larger regions naturally
-                yield larger sums.
+                Exceedance frequency for daily <strong>cell-based exceedance</strong> in {whereCoords}
+                {totalCells}
+                {daysStr}.<br />
+                Plot shows <strong>{cdf ? "CDF (≤ threshold)" : "CCDF (≥ threshold)"}</strong> vs{" "}
+                <strong>threshold</strong>. The curve uses the pooled (overall) cell distribution.
+                Tooltip also reports how often any cell exceeded the threshold on a given day.
             </>
         );
-    }, [whereCoords]);
+    }, [whereCoords, cdf, data?.overall?.total, data?.by_date?.dates]);
+
 
     // --- Fetch handler ----------------------------------------------------------
-    const fetchExpected = async () => {
+    const fetchExceedance = async () => {
         const [from, to] = dateRange;
         if (!from || !to) {
             setErr("Please select a start and end date.");
@@ -122,20 +141,20 @@ const ExpectedFiresContainer: React.FC<Props> = ({ index = "pof", bbox = null, o
 
         try {
             const startUTC = toUTCDate(from); // 00:00:00Z
-            const endUTC = toUTCDate(to);     // 00:00:00Z
+            const endUTC = toUTCDate(to); // 00:00:00Z
 
-            const res = await getExpectedFiresByDate(
-                indexSel,
-                bboxSel || null,
-                abort.signal,
-                startUTC,
-                endUTC
-            );
+            const res = await getExceedanceFrequency(indexSel, {
+                bbox: bboxSel || null,
+                startBase: startUTC, // 00:00:00Z
+                endBase: endUTC,     // 00:00:00Z
+                signal: abort.signal,
+                thresholds: undefined
+            });
 
             if (!abort.signal.aborted) setData(res);
         } catch (e: any) {
             if (!abort.signal.aborted) {
-                setErr(e?.message ?? "Failed to load expected fires");
+                setErr(e?.message ?? "Failed to load exceedance frequency");
                 setData(null);
             }
         } finally {
@@ -145,31 +164,31 @@ const ExpectedFiresContainer: React.FC<Props> = ({ index = "pof", bbox = null, o
 
     return (
         <Stack p="md" gap="xs">
-            <Title order={3}>Expected Fires (Sum by Date)</Title>
-            {typeof onBoxChange === "function" && (
-                <Box
-                    component="p"
-                    c="dimmed"
-                    fz="sm"
-                    style={{
-                        whiteSpace: "normal",
-                        wordBreak: "break-word",
-                        overflowWrap: "anywhere",
-                        lineHeight: 1.45,
-                        maxWidth: "100%",
-                    }}
-                >
-                    {explanation}
-                </Box>
-            )}
+            <Title order={3}>Exceedance Frequency (CCDF / CDF)</Title>
+
+            <Box
+                component="p"
+                c="dimmed"
+                fz="sm"
+                style={{
+                    whiteSpace: "normal",
+                    wordBreak: "break-word",
+                    overflowWrap: "anywhere",
+                    lineHeight: 1.45,
+                    maxWidth: "100%",
+                }}
+            >
+                {explanation}
+            </Box>
+
             <Card padding="xs" pl={0} pr={0}>
-                <ExpectedFiresMenu
+                <ExceedanceFrequencyMenu
                     indexSel={indexSel}
                     onIndexChange={setIndexSel}
                     dateRange={dateRange}
                     onDateRangeChange={setDateRange}
                     loading={loading}
-                    onLoadClick={fetchExpected}
+                    onLoadClick={fetchExceedance}
                     availableDates={availableDates ?? undefined}
                     datesLoading={datesLoading}
                     bbox={bboxSel}
@@ -178,20 +197,20 @@ const ExpectedFiresContainer: React.FC<Props> = ({ index = "pof", bbox = null, o
             </Card>
 
             <Card withBorder padding="xs" style={{ height: 520, position: "relative" }}>
-                <ExpectedFiresChart
-                    key={`${indexSel}-${waterfall ? "wf" : "bar"}`}
+                <ExceedanceFrequencyChart
+                    key={`${indexSel}-${cdf ? "cdf" : "ccdf"}`}
                     data={data}
                     indexSel={indexSel}
                     height={520}
                     loading={loading}
                     error={err}
-                    waterfall={waterfall}
+                    cdf={cdf} // false=CCDF, true=CDF
                 />
                 <Group gap="xs" wrap="wrap" justify="center" align="center" mt="xs">
                     <Switch
-                        checked={waterfall}
-                        onChange={(e) => setWaterfall(e.currentTarget.checked)}
-                        label="Waterfall"
+                        checked={cdf}
+                        onChange={(e) => setCdf(e.currentTarget.checked)}
+                        label="CDF"
                         color="#C0C8E5"
                     />
                 </Group>
@@ -202,4 +221,4 @@ const ExpectedFiresContainer: React.FC<Props> = ({ index = "pof", bbox = null, o
     );
 };
 
-export default ExpectedFiresContainer;
+export default ExceedanceFrequencyContainer;

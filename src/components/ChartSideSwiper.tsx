@@ -2,9 +2,11 @@ import React, { useEffect } from "react";
 import { Drawer, Box, Paper, Stack, ActionIcon } from "@mantine/core";
 import { Carousel } from "@mantine/carousel";
 import { IconX } from "@tabler/icons-react";
-import ExpectedFiresContainer from "./ExpectedFiresContainer";
 import ForecastHorizon from './ForecastHorizon';
 import TimeSeriesContainer from "./TimeSeriesContainer";
+import ExpectedFiresContainer from "./ExpectedFiresContainer";
+import ExceedanceFrequencyContainer from "./ExceedanceFrequencyContainer";
+import DifferenceMapContainer from "./DifferenceMapContainer";
 import { WheelGesturesPlugin } from "embla-carousel-wheel-gestures";
 
 import '@mantine/carousel/styles.css';
@@ -108,6 +110,16 @@ export default function ChartSideSwiper({
                   />
                 ) : n === 3 ? (
                   <ExpectedFiresContainer
+                    index={indexName}
+                    bbox={bbox}
+                  />
+                ) : n === 4 ? (
+                  <ExceedanceFrequencyContainer
+                    index={indexName}
+                    bbox={bbox}
+                  />
+                ) : n === 5 ? (
+                  <DifferenceMapContainer
                     index={indexName}
                     bbox={bbox}
                   />

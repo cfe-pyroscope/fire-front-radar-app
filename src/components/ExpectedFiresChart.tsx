@@ -1,4 +1,3 @@
-// ExpectedFiresChart.tsx
 import React, { useEffect, useMemo, useRef } from "react";
 import * as echarts from "echarts";
 import type { EChartsOption, SeriesOption } from "echarts";
@@ -16,7 +15,6 @@ type Props = {
     height?: number | string;
     loading?: boolean;
     error?: string | null;
-    /** NEW: switch between plain bars and waterfall */
     waterfall?: boolean;
 };
 
@@ -28,7 +26,6 @@ const ExpectedFiresChart: React.FC<Props> = ({
     error = null,
     waterfall = false,
 }) => {
-    // --- ECharts bootstrap ------------------------------------------------------
     const chartRef = useRef<HTMLDivElement | null>(null);
     const echartsRef = useRef<echarts.EChartsType | null>(null);
 
@@ -174,7 +171,7 @@ const ExpectedFiresChart: React.FC<Props> = ({
         return opt;
     }, [data, indexSel, waterfall]);
 
-    // --- Apply option -----------------------------------------------------------
+
     useEffect(() => {
         if (!echartsRef.current) return;
         echartsRef.current.setOption(option, { notMerge: true, lazyUpdate: true });

@@ -31,7 +31,7 @@ const ForecastHorizon: React.FC<Props> = (props) => {
   const merged = { ...defaultProps, ...props };
 
   const [indexSel, setIndexSel] = useState<'pof' | 'fopi'>(merged.index);
-  const [bboxSel, setBboxSel] = useState<string>(merged.bbox ?? '');
+  const [bboxSel, setBoxSel] = useState<string>(merged.bbox ?? '');
 
   const chartRef = useRef<HTMLDivElement | null>(null);
   const echartsRef = useRef<echarts.EChartsType | null>(null);
@@ -42,7 +42,7 @@ const ForecastHorizon: React.FC<Props> = (props) => {
 
   useEffect(() => {
     setIndexSel(merged.index);
-    setBboxSel(merged.bbox ?? '');
+    setBoxSel(merged.bbox ?? '');
   }, [merged.index, merged.bbox]);
 
 
@@ -65,7 +65,7 @@ const ForecastHorizon: React.FC<Props> = (props) => {
       });
 
     return () => abort.abort();
-  }, [indexSel, bboxSel]); // <-- important
+  }, [indexSel, bboxSel]);
 
   useEffect(() => {
     if (!chartRef.current) return;

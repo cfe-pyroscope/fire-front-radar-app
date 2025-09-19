@@ -87,3 +87,37 @@ export const toNiceDateLong = (iso: string) =>
         day: '2-digit',
         year: 'numeric',
     });
+
+
+export const toIsoUtc = (d: string | Date) => {
+    const dd = d instanceof Date ? d : new Date(d);
+    // Force to UTC midnight → "YYYY-MM-DDT00:00:00.000Z"
+    return new Date(Date.UTC(dd.getFullYear(), dd.getMonth(), dd.getDate())).toISOString();
+};
+
+
+export const toMidnightUTC = (d: Date) =>
+    new Date(
+        Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0),
+    );
+
+/** Return full ISO with trailing Z, e.g. 2025-07-20T00:00:00Z */
+export const toIsoZ = (d: Date) => {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}T${pad(
+        d.getUTCHours(),
+    )}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}Z`;
+};
+
+export const formatISO = (d: string | Date): string => {
+    const date = d instanceof Date ? d : new Date(d); // ensure we have a Date
+
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const hours = String(date.getUTCHours()).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.00Z`;
+};

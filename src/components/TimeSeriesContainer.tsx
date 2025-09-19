@@ -19,12 +19,14 @@ import { formatBoundingBox } from '../utils/bounds';
 type Props = {
     index?: "pof" | "fopi";
     bbox?: string | null; // EPSG:3857 "minX,minY,maxX,maxY"
+    onBoxChange?: (bbox: string | null) => void;
 };
 
-const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null }) => {
+
+const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null, onBoxChange = null }) => {
     // Controls that affect fetching
     const [indexSel, setIndexSel] = useState<"pof" | "fopi">(index);
-    const [bboxSel] = useState<string>(bbox ?? "");
+    const [bboxSel, setBoxSel] = useState<string>(bbox ?? "");
     const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
     const fetchAbortRef = useRef<AbortController | null>(null);
 
@@ -158,22 +160,22 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null }) =>
     return (
         <Stack p="md" gap="xs">
             <Title order={3}>Fire Danger Time Series</Title>
-
-            <Box
-                component="p"
-                c="dimmed"
-                fz="sm"
-                style={{
-                    whiteSpace: "normal",
-                    wordBreak: "break-word",
-                    overflowWrap: "anywhere",
-                    lineHeight: 1.45,
-                    maxWidth: "100%",
-                }}
-            >
-                {explanation}
-            </Box>
-
+            {typeof onBoxChange === "function" && (
+                <Box
+                    component="p"
+                    c="dimmed"
+                    fz="sm"
+                    style={{
+                        whiteSpace: "normal",
+                        wordBreak: "break-word",
+                        overflowWrap: "anywhere",
+                        lineHeight: 1.45,
+                        maxWidth: "100%",
+                    }}
+                >
+                    {explanation}
+                </Box>
+            )}
             <Card padding="xs" pl={0} pr={0}>
                 <TimeSeriesMenu
                     indexSel={indexSel}
@@ -184,6 +186,8 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null }) =>
                     onLoadClick={fetchTimeSeries}
                     availableDates={availableDates ?? undefined}
                     datesLoading={datesLoading}
+                    bbox={bboxSel}
+                    onBoxChange={setBoxSel}
                 />
             </Card>
 

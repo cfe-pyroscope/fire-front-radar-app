@@ -1,37 +1,31 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { getDifferenceMap, type DifferenceMapResponse, getAvailableDates } from "../api/fireIndexApi";
+
 import {
     Box,
     Card,
-    Group,
     Stack,
     Title,
     Space,
-    Switch
 } from "@mantine/core";
 
-import ExpectedFiresMenu from "./ExpectedFiresMenu";
-import ExpectedFiresChart from "./ExpectedFiresChart";
-import { formatBoundingBox } from "../utils/bounds";
-
-import { getExpectedFiresByDate, type ExpectedFiresByDate, getAvailableDates } from "../api/fireIndexApi";
-
+import TimeSeriesMenu from "./TimeSeriesMenu";
+import { formatBoundingBox } from '../utils/bounds';
+import DifferenceMapChart from "./DifferenceMapChart";
 
 type Props = {
     index?: "pof" | "fopi";
-    bbox?: string | null; // EPSG:3857 "minX,minY,maxX,maxY"
+    bbox?: string | null;
     onBoxChange?: (bbox: string | null) => void;
 };
 
-const ExpectedFiresContainer: React.FC<Props> = ({ index = "pof", bbox = null, onBoxChange = null }) => {
+const DifferenceMapContainer: React.FC<Props> = ({ index = "pof", bbox = null, onBoxChange = null }) => {
     const [indexSel, setIndexSel] = useState<"pof" | "fopi">(index);
     const [bboxSel, setBoxSel] = useState<string>(bbox ?? "");
     const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
-    const [waterfall, setWaterfall] = useState(false);
-
-    // network control
     const fetchAbortRef = useRef<AbortController | null>(null);
 
-    // manage DatePicker
+    // DatePicker available dates
     const [availableDates, setAvailableDates] = useState<Date[] | null>(null);
     const [datesLoading, setDatesLoading] = useState(false);
     const datesAbortRef = useRef<AbortController | null>(null);
@@ -42,20 +36,23 @@ const ExpectedFiresContainer: React.FC<Props> = ({ index = "pof", bbox = null, o
     };
 
     useEffect(() => {
-        // whenever index changes, (re)load available dates
+        if (onBoxChange) onBoxChange(bboxSel || null);
+    }, [bboxSel, onBoxChange]);
+
+    useEffect(() => {
         if (datesAbortRef.current) datesAbortRef.current.abort();
         const abort = new AbortController();
         datesAbortRef.current = abort;
 
         setDatesLoading(true);
         setAvailableDates(null);
+
         setData(null);
         setErr(null);
 
         (async () => {
             try {
                 const raw = await getAvailableDates(indexSel, abort.signal);
-                // expect ISO strings or timestamps; map to Date[]
                 const dates = (raw ?? [])
                     .map((v: any) => new Date(v))
                     .filter((d: Date) => !Number.isNaN(d.getTime()))
@@ -64,8 +61,6 @@ const ExpectedFiresContainer: React.FC<Props> = ({ index = "pof", bbox = null, o
 
                 if (!abort.signal.aborted) {
                     setAvailableDates(dates);
-
-                    // keep or clear the current range depending on validity for this index
                     setDateRange(([from, to]) => {
                         if (!from || !to || dates.length === 0) return [null, null];
                         const min = dates[0].getTime();
@@ -86,27 +81,32 @@ const ExpectedFiresContainer: React.FC<Props> = ({ index = "pof", bbox = null, o
     }, [indexSel]);
 
     // Data / network state
-    const [data, setData] = useState<ExpectedFiresByDate | null>(null);
+    const [data, setData] = useState<DifferenceMapResponse | null>(null);
     const [loading, setLoading] = useState(false);
     const [err, setErr] = useState<string | null>(null);
 
     const whereCoords = useMemo(() => {
-        return formatBoundingBox(data?.bbox_epsg4326 ?? null, bboxSel);
+        return formatBoundingBox(data?.bbox_epsg4326 as any, bboxSel);
     }, [data?.bbox_epsg4326, bboxSel]);
 
     const explanation = useMemo(() => {
-        return (
+        return indexSel === "pof" ? (
             <>
-                Vertical bar chart showing <strong>expected number of fires</strong> (sum of cell
-                probabilities) by UTC <strong>date</strong> for the selected area {whereCoords}.<br />
-                This is an expected <em>count</em>, not a probability. Larger regions naturally
-                yield larger sums.
+                Map showing the daily difference in POF per cell.{" "}
+                <strong><span style={{ color: "#d73027" }}>Red</span></strong> = risk increased,{" "}
+                <strong><span style={{ color: "#4575b4" }}>Blue</span></strong> = risk decreased.
+            </>
+        ) : (
+            <>
+                Map showing the daily difference in FOPI per cell.{" "}
+                <strong><span style={{ color: "#d73027" }}>Red</span></strong> = risk increased,{" "}
+                <strong><span style={{ color: "#4575b4" }}>Blue</span></strong> = risk decreased.
             </>
         );
-    }, [whereCoords]);
+    }, [indexSel, whereCoords]);
 
-    // --- Fetch handler ----------------------------------------------------------
-    const fetchExpected = async () => {
+    // --- Fetch handler --------------------------------------------------------
+    const fetchDiffMap = async () => {
         const [from, to] = dateRange;
         if (!from || !to) {
             setErr("Please select a start and end date.");
@@ -121,21 +121,21 @@ const ExpectedFiresContainer: React.FC<Props> = ({ index = "pof", bbox = null, o
         setErr(null);
 
         try {
-            const startUTC = toUTCDate(from); // 00:00:00Z
-            const endUTC = toUTCDate(to);     // 00:00:00Z
+            const startUTC = toUTCDate(from);
+            const endUTC = toUTCDate(to);
 
-            const res = await getExpectedFiresByDate(
+            const res = await getDifferenceMap(
                 indexSel,
-                bboxSel || null,
-                abort.signal,
                 startUTC,
-                endUTC
+                endUTC,
+                bboxSel,
+                abort.signal
             );
 
             if (!abort.signal.aborted) setData(res);
         } catch (e: any) {
             if (!abort.signal.aborted) {
-                setErr(e?.message ?? "Failed to load expected fires");
+                setErr(e?.message ?? "Failed to load difference map");
                 setData(null);
             }
         } finally {
@@ -145,31 +145,30 @@ const ExpectedFiresContainer: React.FC<Props> = ({ index = "pof", bbox = null, o
 
     return (
         <Stack p="md" gap="xs">
-            <Title order={3}>Expected Fires (Sum by Date)</Title>
-            {typeof onBoxChange === "function" && (
-                <Box
-                    component="p"
-                    c="dimmed"
-                    fz="sm"
-                    style={{
-                        whiteSpace: "normal",
-                        wordBreak: "break-word",
-                        overflowWrap: "anywhere",
-                        lineHeight: 1.45,
-                        maxWidth: "100%",
-                    }}
-                >
-                    {explanation}
-                </Box>
-            )}
+            <Title order={3}>Fire Risk Change Map</Title>
+            <Box
+                component="p"
+                c="dimmed"
+                fz="sm"
+                style={{
+                    whiteSpace: "normal",
+                    wordBreak: "break-word",
+                    overflowWrap: "anywhere",
+                    lineHeight: 1.45,
+                    maxWidth: "100%",
+                }}
+            >
+                {explanation}
+            </Box>
+
             <Card padding="xs" pl={0} pr={0}>
-                <ExpectedFiresMenu
+                <TimeSeriesMenu
                     indexSel={indexSel}
                     onIndexChange={setIndexSel}
                     dateRange={dateRange}
                     onDateRangeChange={setDateRange}
                     loading={loading}
-                    onLoadClick={fetchExpected}
+                    onLoadClick={fetchDiffMap}
                     availableDates={availableDates ?? undefined}
                     datesLoading={datesLoading}
                     bbox={bboxSel}
@@ -178,23 +177,13 @@ const ExpectedFiresContainer: React.FC<Props> = ({ index = "pof", bbox = null, o
             </Card>
 
             <Card withBorder padding="xs" style={{ height: 520, position: "relative" }}>
-                <ExpectedFiresChart
-                    key={`${indexSel}-${waterfall ? "wf" : "bar"}`}
+                <DifferenceMapChart
                     data={data}
                     indexSel={indexSel}
-                    height={520}
                     loading={loading}
                     error={err}
-                    waterfall={waterfall}
+                    height={520}
                 />
-                <Group gap="xs" wrap="wrap" justify="center" align="center" mt="xs">
-                    <Switch
-                        checked={waterfall}
-                        onChange={(e) => setWaterfall(e.currentTarget.checked)}
-                        label="Waterfall"
-                        color="#C0C8E5"
-                    />
-                </Group>
             </Card>
 
             <Space h="xs" />
@@ -202,4 +191,4 @@ const ExpectedFiresContainer: React.FC<Props> = ({ index = "pof", bbox = null, o
     );
 };
 
-export default ExpectedFiresContainer;
+export default DifferenceMapContainer;

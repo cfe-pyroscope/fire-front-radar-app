@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../utils/config';
+import { toIsoUtc, toMidnightUTC, toIsoZ, formatISO } from '../utils/date';
 
 /** Public types */
 export type IndexName = 'pof' | 'fopi';
@@ -50,32 +51,7 @@ export class ApiError extends Error {
     }
 }
 
-/** Utilities */
-const toMidnightUTC = (d: Date) =>
-    new Date(
-        Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0),
-    );
 
-/** Return full ISO with trailing Z, e.g. 2025-07-20T00:00:00Z */
-const toIsoZ = (d: Date) => {
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}T${pad(
-        d.getUTCHours(),
-    )}:${pad(d.getUTCMinutes())}:${pad(d.getUTCSeconds())}Z`;
-};
-
-const formatISO = (d: string | Date): string => {
-    const date = d instanceof Date ? d : new Date(d); // ensure we have a Date
-
-    const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(date.getUTCDate()).padStart(2, '0');
-    const hours = String(date.getUTCHours()).padStart(2, '0');
-    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-    const seconds = String(date.getUTCSeconds()).padStart(2, '0');
-
-    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.00Z`;
-};
 
 /** Low-level fetch wrapper with better errors + optional AbortSignal */
 async function fetchJSON<T>(url: string, signal?: AbortSignal): Promise<T> {
@@ -364,11 +340,6 @@ export async function getTimeSeries(
     let url = `${API_BASE_URL}/api/${indexName}/time_series?format=json`;
     if (bbox) url += `&bbox=${encodeURIComponent(bbox)}`;
 
-    const toIsoUtc = (d: string | Date) => {
-        const dd = d instanceof Date ? d : new Date(d);
-        // Force to UTC midnight and output 2025-09-01T00:00:00Z
-        return new Date(Date.UTC(dd.getFullYear(), dd.getMonth(), dd.getDate())).toISOString();
-    };
 
     if (startBase) url += `&start_base=${encodeURIComponent(toIsoUtc(startBase))}`;
     if (endBase) url += `&end_base=${encodeURIComponent(toIsoUtc(endBase))}`;
@@ -399,15 +370,91 @@ export async function getExpectedFiresByDate(
 ): Promise<ExpectedFiresByDate> {
     let url = `${API_BASE_URL}/api/${indexName}/expected_fires?format=json`;
     if (bbox) url += `&bbox=${encodeURIComponent(bbox)}`;
-
-    const toIsoUtc = (d: string | Date) => {
-        const dd = d instanceof Date ? d : new Date(d);
-        // Force to UTC midnight → "YYYY-MM-DDT00:00:00.000Z"
-        return new Date(Date.UTC(dd.getFullYear(), dd.getMonth(), dd.getDate())).toISOString();
-    };
-
     if (startBase) url += `&start_base=${encodeURIComponent(toIsoUtc(startBase))}`;
     if (endBase) url += `&end_base=${encodeURIComponent(toIsoUtc(endBase))}`;
-
+    console.info("[Exceedance] GET", url);
     return fetchJSON<ExpectedFiresByDate>(url, signal);
 }
+
+
+
+export type ExceedanceFrequency = {
+    index: 'pof' | 'fopi';
+    mode: 'exceedance_frequency';
+    bbox_epsg3857?: string | null;
+    bbox_epsg4326?: [number, number, number, number] | null; // [lat_min, lon_min, lat_max, lon_max]
+
+    thresholds: number[];
+
+    overall: {
+        thresholds: number[];   // same as top-level thresholds
+        fraction: number[];     // pooled CCDF across all runs/cells
+        count: number[];        // pooled count of cells >= t
+        total: number;          // pooled total valid cells
+    };
+
+    by_date: {
+        dates: string[];        // YYYY-MM-DD
+        fraction: number[][];   // shape: [n_dates][n_thresholds]
+        count: number[][];      // shape: [n_dates][n_thresholds]
+        total: number[];        // per-date total valid cells
+    };
+
+    notes?: string;
+};
+
+
+export async function getExceedanceFrequency(
+    indexName: 'pof' | 'fopi',
+    opts?: {
+        bbox?: string | null;
+        startBase?: string | Date | null;
+        endBase?: string | Date | null;
+        thresholds?: number[] | null; // optional custom thresholds
+        signal?: AbortSignal;
+    }
+): Promise<ExceedanceFrequency> {
+    const { bbox, startBase, endBase, thresholds, signal } = opts ?? {};
+
+    let url = `${API_BASE_URL}/api/${indexName}/exceedance_frequency?format=json`;
+    if (bbox) url += `&bbox=${encodeURIComponent(bbox)}`;
+    if (startBase) url += `&start_base=${encodeURIComponent(toIsoUtc(startBase))}`;
+    if (endBase) url += `&end_base=${encodeURIComponent(toIsoUtc(endBase))}`;
+    if (thresholds && thresholds.length) {
+        url += `&thresholds=${encodeURIComponent(thresholds.join(','))}`;
+    }
+
+    return fetchJSON<ExceedanceFrequency>(url, signal);
+}
+
+
+export type DifferenceMapResponse = {
+    index: "pof" | "fopi";
+    mode: "difference_map";
+    bbox_epsg3857?: string | null;
+    bbox_epsg4326?: [number, number, number, number] | null;
+    base_time_start: string; // ISO8601
+    base_time_end: string;   // ISO8601
+    lats: number[];
+    lons: number[];
+    delta: (number | null)[][];
+};
+
+export async function getDifferenceMap(
+    indexName: "pof" | "fopi",
+    baseTimeStart: string | Date,
+    baseTimeEnd: string | Date,
+    bbox: string,
+    signal?: AbortSignal
+): Promise<DifferenceMapResponse> {
+    const url = new URL(`${API_BASE_URL}/api/${indexName}/difference_map`);
+    url.searchParams.set("format", "json");
+    url.searchParams.set("bbox", bbox);
+    url.searchParams.set("base_time_start", toIsoUtc(baseTimeStart));
+    url.searchParams.set("base_time_end", toIsoUtc(baseTimeEnd));
+
+    console.log("[getDifferenceMap] API query:", url.toString());
+    return fetchJSON<DifferenceMapResponse>(url.toString(), signal);
+}
+
+

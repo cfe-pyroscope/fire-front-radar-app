@@ -3,7 +3,7 @@ import { DatePickerInput } from "@mantine/dates";
 import { Button, Group, SegmentedControl } from "@mantine/core";
 
 import "@mantine/dates/styles.css";
-import "../css/TimeSeriesMenu.css";
+import "../css/ExpectedFires.css";
 
 type Props = {
     indexSel: "pof" | "fopi";
@@ -14,6 +14,8 @@ type Props = {
     onLoadClick: () => void;
     availableDates?: readonly (Date | string | number)[];
     datesLoading?: boolean;
+    bbox: string | null;
+    onBoxChange: (bbox: string) => void;
 };
 
 const toRealDate = (input: unknown): Date | null => {
@@ -35,7 +37,6 @@ const ExpectedFiresMenu: React.FC<Props> = ({
 }) => {
     const normalized = useMemo(() => {
         const arr = (availableDates ?? []).map(toRealDate).filter(Boolean) as Date[];
-        // normalize to UTC midnight (consistent equality by day)
         const toUTC = (d: Date) =>
             new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
         return arr.map(toUTC).sort((a, b) => a.getTime() - b.getTime());
@@ -85,7 +86,7 @@ const ExpectedFiresMenu: React.FC<Props> = ({
             />
 
             <Button
-                className="time-series-laod-data-btn"
+                className="expected-fires-load-data-btn"
                 onClick={onLoadClick}
                 disabled={!dateRange[0] || !dateRange[1] || loading}
                 radius="md"

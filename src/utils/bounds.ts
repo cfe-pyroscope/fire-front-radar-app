@@ -8,15 +8,17 @@ export function formatBoundingBox(
         `${Math.abs(v).toFixed(digits)}°${v >= 0 ? pos : neg}`;
 
     if (Array.isArray(geo) && geo.length === 4) {
-        const [minLon, minLat, maxLon, maxLat] = geo;
-        return `(SW → NE) ${dms(minLat, " N", " S")}, ${dms(minLon, " E", " W")} → ${dms(
-            maxLat,
+        // Backend sends: [lat_min, lon_min, lat_max, lon_max]
+        const [latMin, lonMin, latMax, lonMax] = geo;
+        return `(SW → NE) ${dms(latMin, " N", " S")}, ${dms(lonMin, " E", " W")} → ${dms(
+            latMax,
             " N",
             " S"
-        )}, ${dms(maxLon, " E", " W")}`;
+        )}, ${dms(lonMax, " E", " W")}`;
     }
 
     if (bbox3857) return ""; // Not supported yet
 
     return "—";
 }
+

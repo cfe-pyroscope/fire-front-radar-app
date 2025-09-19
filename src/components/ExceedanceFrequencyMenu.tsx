@@ -3,9 +3,7 @@ import { DatePickerInput } from "@mantine/dates";
 import { Button, Group, SegmentedControl } from "@mantine/core";
 
 import "@mantine/dates/styles.css";
-import "../css/TimeSeries.css";
-
-
+import "../css/ExceedanceFrequency.css";
 
 type Props = {
     indexSel: "pof" | "fopi";
@@ -27,8 +25,7 @@ const toRealDate = (input: unknown): Date | null => {
     return Number.isNaN(d.getTime()) ? null : d;
 };
 
-
-const TimeSeriesMenu: React.FC<Props> = ({
+const ExceedanceFrequencyMenu: React.FC<Props> = ({
     indexSel,
     onIndexChange,
     dateRange,
@@ -38,13 +35,10 @@ const TimeSeriesMenu: React.FC<Props> = ({
     availableDates,
     datesLoading = false,
 }) => {
-
     const normalized = useMemo(() => {
-        const arr = (availableDates ?? [])
-            .map(toRealDate)
-            .filter(Boolean) as Date[];
-        // normalize to UTC midnight (consistent equality by day)
-        const toUTC = (d: Date) => new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+        const arr = (availableDates ?? []).map(toRealDate).filter(Boolean) as Date[];
+        const toUTC = (d: Date) =>
+            new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
         return arr.map(toUTC).sort((a, b) => a.getTime() - b.getTime());
     }, [availableDates]);
 
@@ -92,7 +86,7 @@ const TimeSeriesMenu: React.FC<Props> = ({
             />
 
             <Button
-                className="time-series-load-data-btn"
+                className="exceedance-frequency-load-data-btn"
                 onClick={onLoadClick}
                 disabled={!dateRange[0] || !dateRange[1] || loading}
                 radius="md"
@@ -103,4 +97,4 @@ const TimeSeriesMenu: React.FC<Props> = ({
     );
 };
 
-export default TimeSeriesMenu;
+export default ExceedanceFrequencyMenu;
