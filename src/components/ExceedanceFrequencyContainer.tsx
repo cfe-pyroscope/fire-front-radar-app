@@ -1,19 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { getTimeSeries, type TimeSeriesByBaseTime, getAvailableDates } from "../api/fireIndexApi";
+import { Box, Card, Group, Stack, Title, Space, Switch } from "@mantine/core";
+
+import ExceedanceFrequencyMenu from "./ExceedanceFrequencyMenu";
+import ExceedanceFrequencyChart from "./ExceedanceFrequencyChart";
+import { formatBoundingBox } from "../utils/bounds";
 
 import {
-    Box,
-    Card,
-    Group,
-    Stack,
-    Switch,
-    Title,
-    Space,
-} from "@mantine/core";
-
-import TimeSeriesMenu from "./TimeSeriesMenu";
-import TimeSeriesChart from "./TimeSeriesChart";
-import { formatBoundingBox } from '../utils/bounds';
+    getExceedanceFrequency,
+    type ExceedanceFrequency,
+    getAvailableDates,
+} from "../api/fireIndexApi";
 
 // --- Props -------------------------------------------------------------------
 type Props = {
@@ -23,11 +19,22 @@ type Props = {
 };
 
 
-const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null, onBoxChange = null }) => {
-    // Controls that affect fetching
+const ExceedanceFrequencyContainer: React.FC<Props> = ({
+    index = "pof",
+    bbox = null,
+    onBoxChange = null,
+}) => {
     const [indexSel, setIndexSel] = useState<"pof" | "fopi">(index);
     const [bboxSel, setBoxSel] = useState<string>(bbox ?? "");
     const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
+    const [cdf, setCdf] = useState(false); // toggle between CCDF (false) and CDF (true)
+
+    // Notify parent when bbox changes (if callback provided)
+    useEffect(() => {
+        if (onBoxChange) onBoxChange(bboxSel || null);
+    }, [bboxSel, onBoxChange]);
+
+    // network control
     const fetchAbortRef = useRef<AbortController | null>(null);
 
     // manage DatePicker
@@ -40,7 +47,6 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null, onBo
         return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     };
 
-
     useEffect(() => {
         // whenever index changes, (re)load available dates
         if (datesAbortRef.current) datesAbortRef.current.abort();
@@ -49,14 +55,13 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null, onBo
 
         setDatesLoading(true);
         setAvailableDates(null);
-
         setData(null);
         setErr(null);
 
         (async () => {
             try {
                 const raw = await getAvailableDates(indexSel, abort.signal);
-                // expect the API to return ISO strings or timestamps; map to Date[]
+                // expect ISO strings or timestamps; map to Date[]
                 const dates = (raw ?? [])
                     .map((v: any) => new Date(v))
                     .filter((d: Date) => !Number.isNaN(d.getTime()))
@@ -87,40 +92,40 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null, onBo
     }, [indexSel]);
 
     // Data / network state
-    const [data, setData] = useState<TimeSeriesByBaseTime | null>(null);
+    const [data, setData] = useState<ExceedanceFrequency | null>(null);
     const [loading, setLoading] = useState(false);
     const [err, setErr] = useState<string | null>(null);
 
-    // Presentation controls
-    const [smooth, setSmooth] = useState(true);
-    const [area, setArea] = useState(true);
-
-
     const whereCoords = useMemo(() => {
-        return formatBoundingBox(data?.bbox_epsg4326 as any, bboxSel);
+        return formatBoundingBox(data?.bbox_epsg4326 ?? null, bboxSel);
     }, [data?.bbox_epsg4326, bboxSel]);
 
 
     const explanation = useMemo(() => {
-        return indexSel === "pof" ? (
+        const totalCells =
+            typeof data?.overall?.total === "number" && data.overall.total > 0
+                ? ` (~${data.overall.total.toLocaleString()} pooled cells)`
+                : "";
+
+        const daysTotal =
+            Array.isArray(data?.by_date?.dates) ? data!.by_date.dates.length : 0;
+        const daysStr = daysTotal ? ` across ${daysTotal} day(s)` : "";
+
+        return (
             <>
-                Line chart showing <strong>POF</strong> values for the selected area {whereCoords}.<br />The scale runs from{" "}
-                <strong>0</strong> to{" "}
-                <strong>1</strong>. Any value greater than <strong>0.05</strong>{" "}
-                indicates an <strong>extreme condition</strong>.
-            </>
-        ) : (
-            <>
-                Line chart showing <strong>FOPI</strong> values for the selected area {whereCoords}.<br />The scale runs from{" "}
-                <strong>0</strong> to{" "}
-                <strong>1</strong>. Any value greater than <strong>0.8</strong>{" "}
-                indicates an extreme condition.
+                Exceedance frequency for daily <strong>cell-based exceedance</strong> in {whereCoords}
+                {totalCells}
+                {daysStr}.<br />
+                Plot shows <strong>{cdf ? "CDF (≤ threshold)" : "CCDF (≥ threshold)"}</strong> vs{" "}
+                <strong>threshold</strong>. The curve uses the pooled (overall) cell distribution.
+                Tooltip also reports how often any cell exceeded the threshold on a given day.
             </>
         );
-    }, [indexSel, whereCoords]);
+    }, [whereCoords, cdf, data?.overall?.total, data?.by_date?.dates]);
+
 
     // --- Fetch handler ----------------------------------------------------------
-    const fetchTimeSeries = async () => {
+    const fetchExceedance = async () => {
         const [from, to] = dateRange;
         if (!from || !to) {
             setErr("Please select a start and end date.");
@@ -136,20 +141,20 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null, onBo
 
         try {
             const startUTC = toUTCDate(from); // 00:00:00Z
-            const endUTC = toUTCDate(to);   // 00:00:00Z
+            const endUTC = toUTCDate(to); // 00:00:00Z
 
-            const res = await getTimeSeries(
-                indexSel,
-                bboxSel,
-                abort.signal,
-                startUTC,
-                endUTC
-            );
+            const res = await getExceedanceFrequency(indexSel, {
+                bbox: bboxSel || null,
+                startBase: startUTC, // 00:00:00Z
+                endBase: endUTC,     // 00:00:00Z
+                signal: abort.signal,
+                thresholds: undefined
+            });
 
             if (!abort.signal.aborted) setData(res);
         } catch (e: any) {
             if (!abort.signal.aborted) {
-                setErr(e?.message ?? "Failed to load time series");
+                setErr(e?.message ?? "Failed to load exceedance frequency");
                 setData(null);
             }
         } finally {
@@ -159,31 +164,31 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null, onBo
 
     return (
         <Stack p="md" gap="xs">
-            <Title order={3}>Fire Danger Time Series</Title>
-            {typeof onBoxChange === "function" && (
-                <Box
-                    component="p"
-                    c="dimmed"
-                    fz="sm"
-                    style={{
-                        whiteSpace: "normal",
-                        wordBreak: "break-word",
-                        overflowWrap: "anywhere",
-                        lineHeight: 1.45,
-                        maxWidth: "100%",
-                    }}
-                >
-                    {explanation}
-                </Box>
-            )}
+            <Title order={3}>Exceedance Frequency (CCDF / CDF)</Title>
+
+            <Box
+                component="p"
+                c="dimmed"
+                fz="sm"
+                style={{
+                    whiteSpace: "normal",
+                    wordBreak: "break-word",
+                    overflowWrap: "anywhere",
+                    lineHeight: 1.45,
+                    maxWidth: "100%",
+                }}
+            >
+                {explanation}
+            </Box>
+
             <Card padding="xs" pl={0} pr={0}>
-                <TimeSeriesMenu
+                <ExceedanceFrequencyMenu
                     indexSel={indexSel}
                     onIndexChange={setIndexSel}
                     dateRange={dateRange}
                     onDateRangeChange={setDateRange}
                     loading={loading}
-                    onLoadClick={fetchTimeSeries}
+                    onLoadClick={fetchExceedance}
                     availableDates={availableDates ?? undefined}
                     datesLoading={datesLoading}
                     bbox={bboxSel}
@@ -192,27 +197,20 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null, onBo
             </Card>
 
             <Card withBorder padding="xs" style={{ height: 520, position: "relative" }}>
-                <TimeSeriesChart
+                <ExceedanceFrequencyChart
+                    key={`${indexSel}-${cdf ? "cdf" : "ccdf"}`}
                     data={data}
                     indexSel={indexSel}
-                    smooth={smooth}
-                    area={area}
-                    sampling="lttb"
                     height={520}
                     loading={loading}
                     error={err}
+                    cdf={cdf} // false=CCDF, true=CDF
                 />
                 <Group gap="xs" wrap="wrap" justify="center" align="center" mt="xs">
                     <Switch
-                        checked={smooth}
-                        onChange={(e) => setSmooth(e.currentTarget.checked)}
-                        label="Smooth"
-                        color="#C0C8E5"
-                    />
-                    <Switch
-                        checked={area}
-                        onChange={(e) => setArea(e.currentTarget.checked)}
-                        label="Area fill"
+                        checked={cdf}
+                        onChange={(e) => setCdf(e.currentTarget.checked)}
+                        label="CDF"
                         color="#C0C8E5"
                     />
                 </Group>
@@ -223,4 +221,4 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null, onBo
     );
 };
 
-export default TimeSeriesContainer;
+export default ExceedanceFrequencyContainer;

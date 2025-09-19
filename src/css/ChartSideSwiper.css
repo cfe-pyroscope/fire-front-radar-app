@@ -5,7 +5,7 @@
 .sideChartSwiper .mantine-Drawer-body {
     width: 60vw;
     height: 100vh;
-    overflow: visible;
+    overflow: hidden;
     padding: 0 10px;
 }
 

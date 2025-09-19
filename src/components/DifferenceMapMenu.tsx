@@ -3,9 +3,7 @@ import { DatePickerInput } from "@mantine/dates";
 import { Button, Group, SegmentedControl } from "@mantine/core";
 
 import "@mantine/dates/styles.css";
-import "../css/TimeSeries.css";
-
-
+import "../css/DifferenceMap.css";
 
 type Props = {
     indexSel: "pof" | "fopi";
@@ -27,8 +25,7 @@ const toRealDate = (input: unknown): Date | null => {
     return Number.isNaN(d.getTime()) ? null : d;
 };
 
-
-const TimeSeriesMenu: React.FC<Props> = ({
+const DifferenceMapMenu: React.FC<Props> = ({
     indexSel,
     onIndexChange,
     dateRange,
@@ -38,12 +35,10 @@ const TimeSeriesMenu: React.FC<Props> = ({
     availableDates,
     datesLoading = false,
 }) => {
-
     const normalized = useMemo(() => {
         const arr = (availableDates ?? [])
             .map(toRealDate)
             .filter(Boolean) as Date[];
-        // normalize to UTC midnight (consistent equality by day)
         const toUTC = (d: Date) => new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
         return arr.map(toUTC).sort((a, b) => a.getTime() - b.getTime());
     }, [availableDates]);
@@ -80,9 +75,8 @@ const TimeSeriesMenu: React.FC<Props> = ({
                 clearable
                 minDate={minDate}
                 maxDate={maxDate}
-                // Disable any date not explicitly available from the API
                 excludeDate={(raw) => {
-                    if (!normalized || normalized.length === 0) return false; // if unknown, don't exclude
+                    if (!normalized || normalized.length === 0) return false;
                     const d = toRealDate(raw);
                     if (!d) return true;
                     const key = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toDateString();
@@ -92,7 +86,7 @@ const TimeSeriesMenu: React.FC<Props> = ({
             />
 
             <Button
-                className="time-series-load-data-btn"
+                className="difference-map-load-data-btn"
                 onClick={onLoadClick}
                 disabled={!dateRange[0] || !dateRange[1] || loading}
                 radius="md"
@@ -103,4 +97,4 @@ const TimeSeriesMenu: React.FC<Props> = ({
     );
 };
 
-export default TimeSeriesMenu;
+export default DifferenceMapMenu;

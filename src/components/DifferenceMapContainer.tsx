@@ -1,36 +1,31 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { getTimeSeries, type TimeSeriesByBaseTime, getAvailableDates } from "../api/fireIndexApi";
+import { getDifferenceMap, type DifferenceMapResponse, getAvailableDates } from "../api/fireIndexApi";
 
 import {
     Box,
     Card,
-    Group,
     Stack,
-    Switch,
     Title,
     Space,
 } from "@mantine/core";
 
 import TimeSeriesMenu from "./TimeSeriesMenu";
-import TimeSeriesChart from "./TimeSeriesChart";
 import { formatBoundingBox } from '../utils/bounds';
+import DifferenceMapChart from "./DifferenceMapChart";
 
-// --- Props -------------------------------------------------------------------
 type Props = {
     index?: "pof" | "fopi";
-    bbox?: string | null; // EPSG:3857 "minX,minY,maxX,maxY"
+    bbox?: string | null;
     onBoxChange?: (bbox: string | null) => void;
 };
 
-
-const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null, onBoxChange = null }) => {
-    // Controls that affect fetching
+const DifferenceMapContainer: React.FC<Props> = ({ index = "pof", bbox = null, onBoxChange = null }) => {
     const [indexSel, setIndexSel] = useState<"pof" | "fopi">(index);
     const [bboxSel, setBoxSel] = useState<string>(bbox ?? "");
     const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
     const fetchAbortRef = useRef<AbortController | null>(null);
 
-    // manage DatePicker
+    // DatePicker available dates
     const [availableDates, setAvailableDates] = useState<Date[] | null>(null);
     const [datesLoading, setDatesLoading] = useState(false);
     const datesAbortRef = useRef<AbortController | null>(null);
@@ -40,9 +35,11 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null, onBo
         return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     };
 
+    useEffect(() => {
+        if (onBoxChange) onBoxChange(bboxSel || null);
+    }, [bboxSel, onBoxChange]);
 
     useEffect(() => {
-        // whenever index changes, (re)load available dates
         if (datesAbortRef.current) datesAbortRef.current.abort();
         const abort = new AbortController();
         datesAbortRef.current = abort;
@@ -56,7 +53,6 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null, onBo
         (async () => {
             try {
                 const raw = await getAvailableDates(indexSel, abort.signal);
-                // expect the API to return ISO strings or timestamps; map to Date[]
                 const dates = (raw ?? [])
                     .map((v: any) => new Date(v))
                     .filter((d: Date) => !Number.isNaN(d.getTime()))
@@ -65,8 +61,6 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null, onBo
 
                 if (!abort.signal.aborted) {
                     setAvailableDates(dates);
-
-                    // keep or clear the current range depending on validity for this index
                     setDateRange(([from, to]) => {
                         if (!from || !to || dates.length === 0) return [null, null];
                         const min = dates[0].getTime();
@@ -87,40 +81,32 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null, onBo
     }, [indexSel]);
 
     // Data / network state
-    const [data, setData] = useState<TimeSeriesByBaseTime | null>(null);
+    const [data, setData] = useState<DifferenceMapResponse | null>(null);
     const [loading, setLoading] = useState(false);
     const [err, setErr] = useState<string | null>(null);
-
-    // Presentation controls
-    const [smooth, setSmooth] = useState(true);
-    const [area, setArea] = useState(true);
-
 
     const whereCoords = useMemo(() => {
         return formatBoundingBox(data?.bbox_epsg4326 as any, bboxSel);
     }, [data?.bbox_epsg4326, bboxSel]);
 
-
     const explanation = useMemo(() => {
         return indexSel === "pof" ? (
             <>
-                Line chart showing <strong>POF</strong> values for the selected area {whereCoords}.<br />The scale runs from{" "}
-                <strong>0</strong> to{" "}
-                <strong>1</strong>. Any value greater than <strong>0.05</strong>{" "}
-                indicates an <strong>extreme condition</strong>.
+                Map showing the daily difference in POF per cell.{" "}
+                <strong><span style={{ color: "#d73027" }}>Red</span></strong> = risk increased,{" "}
+                <strong><span style={{ color: "#4575b4" }}>Blue</span></strong> = risk decreased.
             </>
         ) : (
             <>
-                Line chart showing <strong>FOPI</strong> values for the selected area {whereCoords}.<br />The scale runs from{" "}
-                <strong>0</strong> to{" "}
-                <strong>1</strong>. Any value greater than <strong>0.8</strong>{" "}
-                indicates an extreme condition.
+                Map showing the daily difference in FOPI per cell.{" "}
+                <strong><span style={{ color: "#d73027" }}>Red</span></strong> = risk increased,{" "}
+                <strong><span style={{ color: "#4575b4" }}>Blue</span></strong> = risk decreased.
             </>
         );
     }, [indexSel, whereCoords]);
 
-    // --- Fetch handler ----------------------------------------------------------
-    const fetchTimeSeries = async () => {
+    // --- Fetch handler --------------------------------------------------------
+    const fetchDiffMap = async () => {
         const [from, to] = dateRange;
         if (!from || !to) {
             setErr("Please select a start and end date.");
@@ -135,21 +121,21 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null, onBo
         setErr(null);
 
         try {
-            const startUTC = toUTCDate(from); // 00:00:00Z
-            const endUTC = toUTCDate(to);   // 00:00:00Z
+            const startUTC = toUTCDate(from);
+            const endUTC = toUTCDate(to);
 
-            const res = await getTimeSeries(
+            const res = await getDifferenceMap(
                 indexSel,
-                bboxSel,
-                abort.signal,
                 startUTC,
-                endUTC
+                endUTC,
+                bboxSel,
+                abort.signal
             );
 
             if (!abort.signal.aborted) setData(res);
         } catch (e: any) {
             if (!abort.signal.aborted) {
-                setErr(e?.message ?? "Failed to load time series");
+                setErr(e?.message ?? "Failed to load difference map");
                 setData(null);
             }
         } finally {
@@ -159,23 +145,22 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null, onBo
 
     return (
         <Stack p="md" gap="xs">
-            <Title order={3}>Fire Danger Time Series</Title>
-            {typeof onBoxChange === "function" && (
-                <Box
-                    component="p"
-                    c="dimmed"
-                    fz="sm"
-                    style={{
-                        whiteSpace: "normal",
-                        wordBreak: "break-word",
-                        overflowWrap: "anywhere",
-                        lineHeight: 1.45,
-                        maxWidth: "100%",
-                    }}
-                >
-                    {explanation}
-                </Box>
-            )}
+            <Title order={3}>Fire Risk Change Map</Title>
+            <Box
+                component="p"
+                c="dimmed"
+                fz="sm"
+                style={{
+                    whiteSpace: "normal",
+                    wordBreak: "break-word",
+                    overflowWrap: "anywhere",
+                    lineHeight: 1.45,
+                    maxWidth: "100%",
+                }}
+            >
+                {explanation}
+            </Box>
+
             <Card padding="xs" pl={0} pr={0}>
                 <TimeSeriesMenu
                     indexSel={indexSel}
@@ -183,7 +168,7 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null, onBo
                     dateRange={dateRange}
                     onDateRangeChange={setDateRange}
                     loading={loading}
-                    onLoadClick={fetchTimeSeries}
+                    onLoadClick={fetchDiffMap}
                     availableDates={availableDates ?? undefined}
                     datesLoading={datesLoading}
                     bbox={bboxSel}
@@ -192,30 +177,13 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null, onBo
             </Card>
 
             <Card withBorder padding="xs" style={{ height: 520, position: "relative" }}>
-                <TimeSeriesChart
+                <DifferenceMapChart
                     data={data}
                     indexSel={indexSel}
-                    smooth={smooth}
-                    area={area}
-                    sampling="lttb"
-                    height={520}
                     loading={loading}
                     error={err}
+                    height={520}
                 />
-                <Group gap="xs" wrap="wrap" justify="center" align="center" mt="xs">
-                    <Switch
-                        checked={smooth}
-                        onChange={(e) => setSmooth(e.currentTarget.checked)}
-                        label="Smooth"
-                        color="#C0C8E5"
-                    />
-                    <Switch
-                        checked={area}
-                        onChange={(e) => setArea(e.currentTarget.checked)}
-                        label="Area fill"
-                        color="#C0C8E5"
-                    />
-                </Group>
             </Card>
 
             <Space h="xs" />
@@ -223,4 +191,4 @@ const TimeSeriesContainer: React.FC<Props> = ({ index = "pof", bbox = null, onBo
     );
 };
 
-export default TimeSeriesContainer;
+export default DifferenceMapContainer;

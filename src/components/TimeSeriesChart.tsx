@@ -3,16 +3,13 @@ import * as echarts from "echarts";
 import type { EChartsOption } from "echarts";
 import type { TooltipComponentOption } from "echarts/components";
 import { Group, Loader, Text } from "@mantine/core";
-import { getPalette } from "../utils/legend";
 import { toNiceDateShort, toNiceDateLong } from "../utils/date";
 import type { TimeSeriesByBaseTime } from "../api/fireIndexApi";
-
 
 type TooltipFormatterFn = Extract<
     TooltipComponentOption["formatter"],
     (...args: any) => any
 >;
-
 type TooltipFmtParam = Parameters<TooltipFormatterFn>[0];
 
 type Props = {
@@ -55,31 +52,6 @@ const TimeSeriesChart: React.FC<Props> = ({
         };
     }, []);
 
-    // --- Helpers ----------------------------------------------------------------
-    function paletteColorFor(idx: "pof" | "fopi", t: number) {
-        const PALETTE_5 = getPalette("official_5");
-        const tt = idx === "fopi"
-            ? [0.20, 0.40, 0.60, 0.80, 1]
-            : [0.0025 / 0.045, 0.0075 / 0.045, 0.015 / 0.045, 0.030 / 0.045, 1];
-
-        const x = Math.max(0, Math.min(1, t));
-        if (x === 0) return "#ffffff";
-        if (x <= tt[0]) return PALETTE_5[0]; // Low
-        if (x <= tt[1]) return PALETTE_5[1]; // Medium
-        if (x <= tt[2]) return PALETTE_5[2]; // High
-        if (x <= tt[3]) return PALETTE_5[3]; // Very High
-        return PALETTE_5[4];                 // Extreme
-    }
-
-    function hexToRgba(hex: string, alpha = 0.25) {
-        const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        if (!m) return hex;
-        const r = parseInt(m[1], 16);
-        const g = parseInt(m[2], 16);
-        const b = parseInt(m[3], 16);
-        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-    }
-
     // --- Option -----------------------------------------------------------------
     const option: EChartsOption = useMemo(() => {
         const timestamps = data?.timestamps ?? [];
@@ -92,27 +64,18 @@ const TimeSeriesChart: React.FC<Props> = ({
         const minMean = Math.min(...nums(mean));
         const minMedian = Math.min(...nums(median));
 
-        let minShown = 0;
-        minShown =
-            Math.min(
-                isFinite(minMean) ? minMean : Number.POSITIVE_INFINITY,
-                isFinite(minMedian) ? minMedian : Number.POSITIVE_INFINITY
-            );
+        let minShown = Math.min(
+            isFinite(minMean) ? minMean : Number.POSITIVE_INFINITY,
+            isFinite(minMedian) ? minMedian : Number.POSITIVE_INFINITY
+        );
         if (!isFinite(minShown)) minShown = 0;
 
         // y-axis baseline (also used by area origin)
         const axisMin = Math.max(0, minShown * 0.95);
 
-        const maxMean = Math.max(0, ...nums(mean));
-        const maxMedian = Math.max(0, ...nums(median));
-
-        const norm = (idx: "pof" | "fopi", v: number) => {
-            if (!Number.isFinite(v) || v <= 0) return 0;
-            return idx === "pof" ? Math.min(v / 0.05, 1) : Math.min(v, 1);
-        };
-
-        const meanAreaFill = hexToRgba(paletteColorFor(indexSel, norm(indexSel, maxMean)), 1);
-        const medianAreaFill = hexToRgba(paletteColorFor(indexSel, norm(indexSel, maxMedian)), 1);
+        // simple inline colors (no helpers)
+        const meanColor = indexSel === "pof" ? "#5070dd" : "#5070dd";
+        const medianColor = indexSel === "pof" ? "#b6d634" : "#b6d634";
 
         const common = {
             type: "line" as const,
@@ -122,25 +85,68 @@ const TimeSeriesChart: React.FC<Props> = ({
             connectNulls: true,
         };
 
-        const meanColor = "#8a3b00";
-        const medianColor = "#0a5f65";
-
         const series: any[] = [
             {
                 name: "Mean",
                 data: mean,
                 ...common,
-                lineStyle: { width: 2, color: meanColor },
+                // symbols for MEAN
+                symbol: "circle",
+                showSymbol: true,
+                showAllSymbol: "auto",
+                symbolSize: 0,
                 itemStyle: { color: meanColor },
-                ...(area ? { areaStyle: { origin: axisMin, color: meanAreaFill } } : {}),
+                lineStyle: { width: 2, color: meanColor },
+                ...(area
+                    ? {
+                        areaStyle: {
+                            opacity: .8,
+                            origin: axisMin,
+                            color: new (echarts as any).graphic.LinearGradient(0, 0, 0, 1, [
+                                {
+                                    offset: 0,
+                                    color: '#7696fd'
+                                },
+                                {
+                                    offset: 1,
+                                    color: '#2e4eb8'
+                                }
+                            ]),
+                        },
+                    }
+                    : {}),
+                emphasis: { focus: "series" },
             },
             {
                 name: "Median",
                 data: median,
                 ...common,
-                lineStyle: { width: 2, color: medianColor },
+                // symbols for MEDIAN
+                symbol: "diamond",
+                showSymbol: true,
+                showAllSymbol: "auto",
+                symbolSize: 0,
                 itemStyle: { color: medianColor },
-                ...(area ? { areaStyle: { origin: axisMin, color: medianAreaFill } } : {}),
+                lineStyle: { width: 2, color: medianColor },
+                ...(area
+                    ? {
+                        areaStyle: {
+                            opacity: .8,
+                            origin: axisMin,
+                            color: new (echarts as any).graphic.LinearGradient(0, 0, 0, 1, [
+                                {
+                                    offset: 0,
+                                    color: '#ceff08'
+                                },
+                                {
+                                    offset: 1,
+                                    color: '#9ac000'
+                                }
+                            ]),
+                        },
+                    }
+                    : {}),
+                emphasis: { focus: "series" },
             },
         ];
 
@@ -239,7 +245,7 @@ const TimeSeriesChart: React.FC<Props> = ({
                     align="center"
                     style={{ position: "absolute", inset: 0, zIndex: 1 }}
                 >
-                    <Text c="dimmed">No data available.</Text>
+                    <Text c="dimmed">Select index and date range to load the data</Text>
                 </Group>
             )}
             <div ref={chartRef} style={{ width: "100%", height: "100%" }} />

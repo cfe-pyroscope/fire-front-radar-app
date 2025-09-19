@@ -22,6 +22,7 @@
     "dom-to-image": "^2.6.0",
     "echarts": "^6.0.0",
     "embla-carousel-react": "^8.6.0",
+    "embla-carousel-wheel-gestures": "^8.1.0",
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",
     "leaflet-geosearch": "^4.2.0",
